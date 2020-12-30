@@ -1,0 +1,6 @@
+infra/
+.dockerignore
+.gitgnore
+*.cov
+Makefile
+README.md
