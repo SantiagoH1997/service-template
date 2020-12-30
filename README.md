@@ -4,19 +4,19 @@ Template for creating web services in Go.
 
 ## Features
 
-- [x]  Graceful shutdown
+- [x]  Config
+- [x]  Graceful Shutdown
+- [x]  Liveness handler
+- [x]  Authentication
+- [x]  JWT generation
+- [x]  Request parsing
+- [x]  Response handling
+- [x]  Logging
+- [x]  Metrics
+- [x]  Panic handling
+- [x]  Error handling
+- [x]  Docker support
+- [x]  Kubernetes support
 - [x]  Postgres connection
-- [x]  Seeding
-- [x]  CRUD functionality
-- [x]  Validation
-- [x]  Dockerization
-- [ ]  Manejo de errores
-- [ ]  Logging MW
-- [ ]  Health checks
-- [ ]  Autenticación
-- [ ]  Autorización
-- [ ]  Mensaje de error de validación
-- [ ]  K8s
-- [ ]  Tracing
-- [ ]  Métricas
-- [ ]  CI/CD
+- [x]  Migrations
+- [x]  Tracing
