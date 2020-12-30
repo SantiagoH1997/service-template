@@ -7,12 +7,6 @@ import (
 	"time"
 )
 
-// Set of possible publisher types.
-const (
-	TypeStdout  = "stdout"
-	TypeDatadog = "datadog"
-)
-
 // =============================================================================
 
 // Collector defines a contract a collector must support
