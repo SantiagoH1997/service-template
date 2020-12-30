@@ -44,7 +44,7 @@ func run(log *log.Logger) error {
 			ShutdownTimeout time.Duration `conf:"default:5s"`
 		}
 		Expvar struct {
-			Host            string        `conf:"default:0.0.0.0:8081"`
+			Host            string        `conf:"default:0.0.0.0:3001"`
 			Route           string        `conf:"default:/metrics"`
 			ReadTimeout     time.Duration `conf:"default:5s"`
 			WriteTimeout    time.Duration `conf:"default:5s"`

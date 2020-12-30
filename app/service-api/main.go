@@ -52,7 +52,7 @@ func run(log *log.Logger) error {
 		conf.Version
 		Args conf.Args
 		Web  struct {
-			APIHost         string        `conf:"default:0.0.0.0:8080"`
+			APIHost         string        `conf:"default:0.0.0.0:3000"`
 			DebugHost       string        `conf:"default:0.0.0.0:4000"`
 			ReadTimeout     time.Duration `conf:"default:5s"`
 			WriteTimeout    time.Duration `conf:"default:5s"`
