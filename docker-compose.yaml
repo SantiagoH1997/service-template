@@ -32,7 +32,7 @@ services:
     networks:
       - shared-network
     ports:
-      - 8080:8080 # CRUD API
+      - 3000:3000 # CRUD API
       - 4000:4000 # DEBUG API
     depends_on:
       - zipkin
@@ -46,7 +46,7 @@ services:
     networks:
       - shared-network
     ports:
-      - 8081:8081 # EXPVAR API
+      - 3001:3001 # EXPVAR API
       - 4001:4001 # DEBUG API
     depends_on:
       - service-api
