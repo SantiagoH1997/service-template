@@ -84,8 +84,6 @@ func run(log *log.Logger) error {
 		DisableTLS: cfg.DB.DisableTLS,
 	}
 
-	traceID := "00000000-0000-0000-0000-000000000000"
-
 	switch cfg.Args.Num(0) {
 	case "migrate":
 		if err := commands.Migrate(dbConfig); err != nil {
@@ -97,40 +95,15 @@ func run(log *log.Logger) error {
 			return errors.Wrap(err, "seeding database")
 		}
 
-	case "useradd":
-		email := cfg.Args.Num(1)
-		password := cfg.Args.Num(2)
-		if err := commands.UserAdd(traceID, log, dbConfig, email, password); err != nil {
-			return errors.Wrap(err, "adding user")
-		}
-
-	case "users":
-		pageNumber := cfg.Args.Num(1)
-		rowsPerPage := cfg.Args.Num(2)
-		if err := commands.Users(traceID, log, dbConfig, pageNumber, rowsPerPage); err != nil {
-			return errors.Wrap(err, "getting users")
-		}
-
 	case "genkey":
 		if err := commands.GenKey(); err != nil {
 			return errors.Wrap(err, "key generation")
 		}
 
-	case "gentoken":
-		id := cfg.Args.Num(1)
-		privateKeyFile := cfg.Args.Num(2)
-		algorithm := cfg.Args.Num(3)
-		if err := commands.GenToken(traceID, log, dbConfig, id, privateKeyFile, algorithm); err != nil {
-			return errors.Wrap(err, "generating token")
-		}
-
 	default:
 		fmt.Println("migrate: create the schema in the database")
 		fmt.Println("seed: add data to the database")
-		fmt.Println("useradd: add a new user to the database")
-		fmt.Println("users: get a list of users from the database")
 		fmt.Println("genkey: generate a set of private/public key files")
-		fmt.Println("gentoken: generate a JWT for a user with claims")
 		fmt.Println("provide a command to get more help.")
 		return commands.ErrHelp
 	}
