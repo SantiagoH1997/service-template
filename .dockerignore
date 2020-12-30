@@ -1,6 +1,6 @@
 infra/
 .dockerignore
-.gitgnore
-*.cov
+.gitignore
+*.out
 Makefile
 README.md
