@@ -9,7 +9,7 @@ all: api metrics
 
 api:
 	docker build \
-		-f dockerfile.service-api \
+		-f build/dockerfile.service-api \
 		-t service-api-amd64:1.0 \
 		--build-arg VCS_REF=`git rev-parse HEAD` \
 		--build-arg BUILD_DATE=`date -u +”%Y-%m-%dT%H:%M:%SZ”` \
@@ -17,7 +17,7 @@ api:
 
 metrics:
 	docker build \
-		-f dockerfile.metrics \
+		-f build/dockerfile.metrics \
 		-t metrics-amd64:1.0 \
 		--build-arg VCS_REF=`git rev-parse HEAD` \
 		--build-arg BUILD_DATE=`date -u +”%Y-%m-%dT%H:%M:%SZ”` \
@@ -29,10 +29,10 @@ metrics:
 run: up seed
 
 up:
-	docker-compose up --detach --remove-orphans
+	docker-compose -f deploy/docker-compose.yaml up --detach --remove-orphans
 
 down:
-	docker-compose down --remove-orphans
+	docker-compose -f deploy/docker-compose.yaml down --remove-orphans
 
 logs:
 	docker-compose logs -f
@@ -41,7 +41,7 @@ logs:
 # Running with k8s (using Kind)
 
 kind-up:
-	kind create cluster --image kindest/node:v1.20.0 --name service-template-cluster --config infra/k8s/dev/kind-config.yaml
+	kind create cluster --image kindest/node:v1.20.0 --name service-template-cluster --config deploy/k8s/dev/kind-config.yaml
 
 kind-down:
 	kind delete cluster --name service-template-cluster
@@ -51,7 +51,7 @@ kind-load:
 	kind load docker-image metrics-amd64:1.0 --name service-template-cluster
 
 kind-services:
-	kustomize build infra/k8s/dev | kubectl apply -f -
+	kustomize build deploy/k8s/dev | kubectl apply -f -
 
 kind-update-api: api
 	kind load docker-image service-api-amd64:1.0 --name service-template-cluster
@@ -75,16 +75,16 @@ kind-shell:
 	kubectl exec -it $(shell kubectl get pods | grep service-api | cut -c1-26) --container app -- /bin/sh
 
 kind-delete:
-	kustomize build infra/k8s/dev | kubectl delete -f -
+	kustomize build deploy/k8s/dev | kubectl delete -f -
 
 # ==============================================================================
 # Administration
 
 migrate:
-	go run app/service-admin/main.go migrate
+	go run cmd/service-admin/main.go migrate
 
 seed: migrate
-	go run app/service-admin/main.go seed
+	go run cmd/service-admin/main.go seed
 
 # ==============================================================================
 # Running tests within the local computer

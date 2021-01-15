@@ -1,4 +1,4 @@
-infra/
+deploy/
 .dockerignore
 .gitignore
 *.out

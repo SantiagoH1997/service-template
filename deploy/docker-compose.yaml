@@ -38,15 +38,9 @@ services:
       - zipkin
       - db
 
-  metrics:
-    container_name: metrics
-    build:
-      context: ..
-      dockerfile: build/dockerfile.metrics
+  prometheus:
+    image: quay.io/prometheus/prometheus:latest
+    ports:
+     - 9090:9090
     networks:
       - shared-network
-    ports:
-      - 3001:3001 # EXPVAR API
-      - 4001:4001 # DEBUG API
-    depends_on:
-      - service-api
