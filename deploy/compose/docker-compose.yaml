@@ -35,7 +35,7 @@ services:
     container_name: service-api
     build:
       context: ../..
-      dockerfile: build/dockerfile.service-api
+      dockerfile: build/Dockerfile
     networks:
       - shared-network
     ports:
