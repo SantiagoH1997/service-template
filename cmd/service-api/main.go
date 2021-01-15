@@ -16,7 +16,9 @@ import (
 
 	"github.com/ardanlabs/conf"
 	"github.com/dgrijalva/jwt-go"
+	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
 	"github.com/pkg/errors"
+	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"github.com/santiagoh1997/service-template/internal/business/auth"
 	"github.com/santiagoh1997/service-template/internal/business/handlers"
 	"github.com/santiagoh1997/service-template/internal/foundation/database"
@@ -72,8 +74,11 @@ func run(log *log.Logger) error {
 		}
 		Zipkin struct {
 			ReporterURI string  `conf:"default:http://zipkin:9411/api/v2/spans"`
-			ServiceName string  `conf:"default:sales-api"`
+			ServiceName string  `conf:"default:service-api"`
 			Probability float64 `conf:"default:0.05"`
+		}
+		Prometheus struct {
+			ServiceName string `conf:"default:service"`
 		}
 	}
 	cfg.Version.SVN = build
@@ -162,6 +167,25 @@ func run(log *log.Logger) error {
 	}()
 
 	// =========================================================================
+	// Start Prometheus Support
+
+	fieldKeys := []string{"method"}
+
+	counter := kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Namespace: "api",
+		Subsystem: cfg.Prometheus.ServiceName,
+		Name:      "request_count",
+		Help:      "Number of requests received.",
+	}, fieldKeys)
+
+	latency := kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
+		Namespace: "api",
+		Subsystem: cfg.Prometheus.ServiceName,
+		Name:      "request_latency_microseconds",
+		Help:      "Total duration of requests in microseconds.",
+	}, fieldKeys)
+
+	// =========================================================================
 	// Start Tracing Support
 
 	log.Println("main: Initializing OT/Zipkin tracing support")
@@ -213,9 +237,11 @@ func run(log *log.Logger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
+	handler := handlers.NewHTTPHandler(build, shutdown, log, counter, latency, auth, db)
+
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      handlers.NewHTTPHandler(build, shutdown, log, auth, db),
+		Handler:      handler,
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 	}

@@ -65,19 +65,6 @@ spec:
             port: 4000
           initialDelaySeconds: 30
           periodSeconds: 15
-      - name: metrics
-        image: metrics-amd64:1.0
-        env:
-        - name: METRICS_COLLECT_FROM
-          valueFrom:
-            configMapKeyRef:
-              name: app-config
-              key: collect_from
-        ports:
-        - name: metrics
-          containerPort: 3001
-        - name: metrics-debug
-          containerPort: 4001
 ---
 apiVersion: v1
 kind: Service
@@ -96,9 +83,3 @@ spec:
   - name: app-debug
     port: 4000
     targetPort: app-debug
-  - name: metrics
-    port: 3001
-    targetPort: metrics
-  - name: metrics-debug
-    port: 4001
-    targetPort: metrics-debug

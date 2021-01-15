@@ -5,20 +5,12 @@ export PROJECT = service-template
 # ==============================================================================
 # Building containers
 
-all: api metrics
+all: api
 
 api:
 	docker build \
 		-f build/dockerfile.service-api \
 		-t service-api-amd64:1.0 \
-		--build-arg VCS_REF=`git rev-parse HEAD` \
-		--build-arg BUILD_DATE=`date -u +”%Y-%m-%dT%H:%M:%SZ”` \
-		.
-
-metrics:
-	docker build \
-		-f build/dockerfile.metrics \
-		-t metrics-amd64:1.0 \
 		--build-arg VCS_REF=`git rev-parse HEAD` \
 		--build-arg BUILD_DATE=`date -u +”%Y-%m-%dT%H:%M:%SZ”` \
 		.
@@ -29,10 +21,10 @@ metrics:
 run: up seed
 
 up:
-	docker-compose -f deploy/docker-compose.yaml up --detach --remove-orphans
+	docker-compose -f deploy/compose/docker-compose.yaml up --detach --remove-orphans
 
 down:
-	docker-compose -f deploy/docker-compose.yaml down --remove-orphans
+	docker-compose -f deploy/compose/docker-compose.yaml down --remove-orphans
 
 logs:
 	docker-compose logs -f
@@ -48,17 +40,12 @@ kind-down:
 
 kind-load:
 	kind load docker-image service-api-amd64:1.0 --name service-template-cluster
-	kind load docker-image metrics-amd64:1.0 --name service-template-cluster
 
 kind-services:
 	kustomize build deploy/k8s/dev | kubectl apply -f -
 
 kind-update-api: api
 	kind load docker-image service-api-amd64:1.0 --name service-template-cluster
-	kubectl delete pods -lapp=service-api
-
-kind-update-metrics: metrics
-	kind load docker-image metrics-amd64:1.0 --name service-template-cluster
 	kubectl delete pods -lapp=service-api
 
 kind-logs:

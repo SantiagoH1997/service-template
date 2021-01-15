@@ -3,11 +3,14 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/go-kit/kit/metrics"
 	"github.com/jmoiron/sqlx"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/santiagoh1997/service-template/internal/business/auth"
 	"github.com/santiagoh1997/service-template/internal/business/mid"
 	"github.com/santiagoh1997/service-template/internal/business/service"
@@ -15,7 +18,14 @@ import (
 )
 
 // NewHTTPHandler constructs an http.Handler with all the application routes defined.
-func NewHTTPHandler(build string, shutdown chan os.Signal, log *log.Logger, a *auth.Auth, db *sqlx.DB) http.Handler {
+func NewHTTPHandler(
+	build string,
+	shutdown chan os.Signal,
+	log *log.Logger,
+	counter metrics.Counter,
+	latency metrics.Histogram,
+	a *auth.Auth, db *sqlx.DB,
+) http.Handler {
 
 	// The web.App holds all routes and all the common Middleware.
 	app := web.NewApp(shutdown, mid.Logger(log), mid.Errors(log), mid.Metrics(), mid.Panics(log))
@@ -27,6 +37,14 @@ func NewHTTPHandler(build string, shutdown chan os.Signal, log *log.Logger, a *a
 	}
 	app.HandleDebug(http.MethodGet, "/readiness", ch.readiness)
 	app.HandleDebug(http.MethodGet, "/liveness", ch.liveness)
+
+	// Register metrics endpoint.
+	ph := promhttp.Handler()
+	prometheusHandler := func(_ context.Context, w http.ResponseWriter, r *http.Request) error {
+		ph.ServeHTTP(w, r)
+		return nil
+	}
+	app.Handle(http.MethodGet, "/metrics", prometheusHandler)
 
 	// Register main endpoints.
 	uh := userHandler{
