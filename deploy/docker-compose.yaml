@@ -1,0 +1,52 @@
+version: '3.8'
+
+networks:
+  shared-network:
+    driver: bridge
+
+services:
+
+  zipkin:
+    container_name: zipkin
+    networks:
+      - shared-network
+    image: openzipkin/zipkin:2.23
+    ports:
+      - 9411:9411
+
+  db:
+    container_name: service_db
+    networks:
+      - shared-network
+    image: postgres:13-alpine
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5432:5432      
+
+  service-api:
+    container_name: service-api
+    build:
+      context: ..
+      dockerfile: build/dockerfile.service-api
+    networks:
+      - shared-network
+    ports:
+      - 3000:3000 # CRUD API
+      - 4000:4000 # DEBUG API
+    depends_on:
+      - zipkin
+      - db
+
+  metrics:
+    container_name: metrics
+    build:
+      context: ..
+      dockerfile: build/dockerfile.metrics
+    networks:
+      - shared-network
+    ports:
+      - 3001:3001 # EXPVAR API
+      - 4001:4001 # DEBUG API
+    depends_on:
+      - service-api
