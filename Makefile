@@ -9,7 +9,7 @@ all: api
 
 api:
 	docker build \
-		-f build/dockerfile.service-api \
+		-f build/Dockerfile \
 		-t service-api-amd64:1.0 \
 		--build-arg VCS_REF=`git rev-parse HEAD` \
 		--build-arg BUILD_DATE=`date -u +”%Y-%m-%dT%H:%M:%SZ”` \
