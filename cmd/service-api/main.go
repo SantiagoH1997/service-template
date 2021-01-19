@@ -27,7 +27,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
-// TODO: Replace "SERVICE" with the service name.
+// TODO: Replace "SERVICE" with the service's name.
 const serviceName = "SERVICE"
 
 // build is the git version of this program. It is set using build flags in the Makefile.
@@ -167,7 +167,7 @@ func run(log *log.Logger) error {
 	}()
 
 	// =========================================================================
-	// Start Prometheus Support
+	// Prometheus Support
 
 	fieldKeys := []string{"method"}
 
@@ -215,8 +215,6 @@ func run(log *log.Logger) error {
 	//
 	// /debug/pprof - Added to the default mux by importing the net/http/pprof package.
 	// /debug/vars - Added to the default mux by importing the expvar package.
-	//
-	// Not concerned with shutting this down when the application is shutdown.
 
 	log.Println("main: Initializing debugging support")
 

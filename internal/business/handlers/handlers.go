@@ -24,11 +24,12 @@ func NewHTTPHandler(
 	log *log.Logger,
 	counter metrics.Counter,
 	latency metrics.Histogram,
-	a *auth.Auth, db *sqlx.DB,
+	a *auth.Auth,
+	db *sqlx.DB,
 ) http.Handler {
 
 	// The web.App holds all routes and all the common Middleware.
-	app := web.NewApp(shutdown, mid.Logger(log), mid.Errors(log), mid.Metrics(), mid.Panics(log))
+	app := web.NewApp(shutdown, mid.Logger(log), mid.Errors(log), mid.Metrics(latency), mid.Panics(log))
 
 	// Register debug check endpoints.
 	ch := checkHandler{
