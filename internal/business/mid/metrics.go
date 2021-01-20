@@ -2,8 +2,8 @@ package mid
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,7 +13,7 @@ import (
 )
 
 // Metrics updates program counters.
-func Metrics(requests, errors metrics.Counter, duration metrics.Histogram) web.Middleware {
+func Metrics(errorCount metrics.Counter, redMetrics metrics.Histogram) web.Middleware {
 
 	m := func(handler web.Handler) web.Handler {
 
@@ -21,6 +21,8 @@ func Metrics(requests, errors metrics.Counter, duration metrics.Histogram) web.M
 			ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.mid.metrics")
 			defer span.End()
 
+			// If the context is missing this value, request the service
+			// to be shutdown gracefully.
 			v, ok := ctx.Value(web.KeyValues).(*web.Values)
 			if !ok {
 				return web.NewShutdownError("web value missing from context")
@@ -36,14 +38,12 @@ func Metrics(requests, errors metrics.Counter, duration metrics.Histogram) web.M
 			err := handler(ctx, w, r)
 
 			// Increment the request counter.
-			requests.Add(1)
-			defer func() {
-				duration.With("success", fmt.Sprint(err == nil)).Observe(time.Since(v.Now).Seconds())
-			}()
+			s := time.Since(v.Now).Seconds()
+			redMetrics.With("method", r.Method, "path", r.URL.Path, "status_code", strconv.Itoa(v.StatusCode)).Observe(s)
 
 			// Increment the errors counter if an error occurred on this request.
 			if err != nil {
-				errors.Add(1)
+				errorCount.With("method", r.Method, "path", r.URL.Path).Add(1)
 			}
 
 			// Return the error so it can be handled further up the chain.

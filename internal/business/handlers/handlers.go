@@ -22,14 +22,16 @@ func NewHTTPHandler(
 	build string,
 	shutdown chan os.Signal,
 	log *log.Logger,
-	counter metrics.Counter,
-	latency metrics.Histogram,
+	errorCount metrics.Counter,
+	redMetrics metrics.Histogram,
+	requestCount metrics.Counter,
+	requestLatency metrics.Histogram,
 	a *auth.Auth,
 	db *sqlx.DB,
 ) http.Handler {
 
 	// The web.App holds all routes and all the common Middleware.
-	app := web.NewApp(shutdown, mid.Logger(log), mid.Errors(log), mid.Metrics(latency), mid.Panics(log))
+	app := web.NewApp(shutdown, mid.Logger(log), mid.Errors(log), mid.Metrics(errorCount, redMetrics), mid.Panics(log))
 
 	// Register debug check endpoints.
 	ch := checkHandler{
@@ -45,11 +47,13 @@ func NewHTTPHandler(
 		ph.ServeHTTP(w, r)
 		return nil
 	}
-	app.Handle(http.MethodGet, "/metrics", prometheusHandler)
+	app.HandleDebug(http.MethodGet, "/metrics", prometheusHandler)
 
 	// Register main endpoints.
+	us := service.New(log, db)
+	us = service.NewInstrumentingUserService(requestCount, requestLatency, us)
 	uh := userHandler{
-		svc:  service.New(log, db),
+		svc:  us,
 		auth: a,
 	}
 	app.Handle(http.MethodGet, "/v1/users/:page/:rows", uh.getAll, mid.Authenticate(a), mid.Authorize(auth.RoleAdmin))

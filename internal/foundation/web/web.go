@@ -136,7 +136,7 @@ func (a *App) handle(debug bool, method string, path string, handler Handler, mw
 				w.WriteHeader(http.StatusNotFound)
 			}
 		}
-		http.DefaultServeMux.HandleFunc("/debug"+path, f)
+		http.DefaultServeMux.HandleFunc(path, f)
 		return
 	}
 	a.mux.Handle(method, path, h)

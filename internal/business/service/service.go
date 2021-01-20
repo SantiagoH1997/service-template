@@ -37,14 +37,23 @@ var (
 )
 
 // UserService manages the set of API's for user access.
-type UserService struct {
+type UserService interface {
+	Create(ctx context.Context, traceID string, nur NewUserRequest, now time.Time) (User, error)
+	Update(ctx context.Context, traceID string, claims auth.Claims, userID string, uur UpdateUserRequest, now time.Time) (User, error)
+	Delete(ctx context.Context, traceID string, claims auth.Claims, userID string) error
+	GetAll(ctx context.Context, traceID string, pageNumber int, rowsPerPage int) ([]User, error)
+	GetByID(ctx context.Context, traceID string, claims auth.Claims, userID string) (User, error)
+	Authenticate(ctx context.Context, traceID string, now time.Time, email, password string) (auth.Claims, error)
+}
+
+type userService struct {
 	log *log.Logger
 	db  *sqlx.DB
 }
 
 // New constructs a UserService for api access.
 func New(log *log.Logger, db *sqlx.DB) UserService {
-	return UserService{
+	return userService{
 		log: log,
 		db:  db,
 	}
@@ -52,19 +61,19 @@ func New(log *log.Logger, db *sqlx.DB) UserService {
 
 // Create creates a new user, generates a password hash,
 // and saves it into the DB.
-func (ur UserService) Create(ctx context.Context, traceID string, nur NewUserRequest, now time.Time) (User, error) {
+func (us userService) Create(ctx context.Context, traceID string, nur NewUserRequest, now time.Time) (User, error) {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.create")
 	defer span.End()
 
 	// Check if the email is already in use.
 	const q1 = `SELECT COUNT(*) FROM users AS numUsers WHERE email=$1`
 
-	ur.log.Printf("%s: %s: %s", traceID, "user.create",
+	us.log.Printf("%s: %s: %s", traceID, "user.create",
 		database.Log(q1, nur.Email),
 	)
 
 	var numUsers int
-	if err := ur.db.QueryRowContext(ctx, q1, nur.Email).Scan(&numUsers); err != nil {
+	if err := us.db.QueryRowContext(ctx, q1, nur.Email).Scan(&numUsers); err != nil {
 		return User{}, errors.Wrapf(err, "looking for users with the email %s", nur.Email)
 	}
 	if numUsers != 0 {
@@ -94,11 +103,11 @@ func (ur UserService) Create(ctx context.Context, traceID string, nur NewUserReq
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 
-	ur.log.Printf("%s: %s: %s", traceID, "userService.Create",
+	us.log.Printf("%s: %s: %s", traceID, "userService.Create",
 		database.Log(q, u.ID, u.Email, u.PasswordHash, u.Roles, u.Name, u.LastName, u.Country, u.DateCreated, u.DateUpdated),
 	)
 
-	if _, err := ur.db.ExecContext(ctx, q, u.ID, u.Email, u.PasswordHash, u.Roles, u.Name, u.LastName, u.Country, u.DateCreated, u.DateUpdated); err != nil {
+	if _, err := us.db.ExecContext(ctx, q, u.ID, u.Email, u.PasswordHash, u.Roles, u.Name, u.LastName, u.Country, u.DateCreated, u.DateUpdated); err != nil {
 		return User{}, errors.Wrap(err, "inserting user")
 	}
 
@@ -106,11 +115,11 @@ func (ur UserService) Create(ctx context.Context, traceID string, nur NewUserReq
 }
 
 // Update allows a client to update certain fields of a saved User.
-func (ur UserService) Update(ctx context.Context, traceID string, claims auth.Claims, userID string, uur UpdateUserRequest, now time.Time) (User, error) {
+func (us userService) Update(ctx context.Context, traceID string, claims auth.Claims, userID string, uur UpdateUserRequest, now time.Time) (User, error) {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.update")
 	defer span.End()
 
-	u, err := ur.GetByID(ctx, traceID, claims, userID)
+	u, err := us.GetByID(ctx, traceID, claims, userID)
 	if err != nil {
 		return User{}, err
 	}
@@ -133,11 +142,11 @@ func (ur UserService) Update(ctx context.Context, traceID string, claims auth.Cl
 	WHERE
 		user_id=$6`
 
-	ur.log.Printf("%s: %s: %s", traceID, "userService.Update",
+	us.log.Printf("%s: %s: %s", traceID, "userService.Update",
 		database.Log(q, u.Name, u.LastName, u.Email, u.Country, u.DateUpdated, u.ID),
 	)
 
-	if _, err = ur.db.ExecContext(ctx, q, u.Name, u.LastName, u.Email, u.Country, u.DateUpdated, u.ID); err != nil {
+	if _, err = us.db.ExecContext(ctx, q, u.Name, u.LastName, u.Email, u.Country, u.DateUpdated, u.ID); err != nil {
 		return User{}, errors.Wrap(err, "updating user")
 	}
 
@@ -145,7 +154,7 @@ func (ur UserService) Update(ctx context.Context, traceID string, claims auth.Cl
 }
 
 // Delete deletes a User by its ID.
-func (ur UserService) Delete(ctx context.Context, traceID string, claims auth.Claims, userID string) error {
+func (us userService) Delete(ctx context.Context, traceID string, claims auth.Claims, userID string) error {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.delete")
 	defer span.End()
 
@@ -163,11 +172,11 @@ func (ur UserService) Delete(ctx context.Context, traceID string, claims auth.Cl
 	WHERE
 		user_id = $1`
 
-	ur.log.Printf("%s: %s: %s", traceID, "userService.Delete",
+	us.log.Printf("%s: %s: %s", traceID, "userService.Delete",
 		database.Log(q, userID),
 	)
 
-	if _, err := ur.db.ExecContext(ctx, q, userID); err != nil {
+	if _, err := us.db.ExecContext(ctx, q, userID); err != nil {
 		return errors.Wrapf(err, "deleting user %s", userID)
 	}
 
@@ -175,7 +184,7 @@ func (ur UserService) Delete(ctx context.Context, traceID string, claims auth.Cl
 }
 
 // GetAll retrieves a list of existing users from the DB.
-func (ur UserService) GetAll(ctx context.Context, traceID string, pageNumber int, rowsPerPage int) ([]User, error) {
+func (us userService) GetAll(ctx context.Context, traceID string, pageNumber int, rowsPerPage int) ([]User, error) {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.getAll")
 	defer span.End()
 
@@ -190,12 +199,12 @@ func (ur UserService) GetAll(ctx context.Context, traceID string, pageNumber int
 
 	offset := (pageNumber - 1) * rowsPerPage
 
-	ur.log.Printf("%s: %s: %s", traceID, "userService.GetAll",
+	us.log.Printf("%s: %s: %s", traceID, "userService.GetAll",
 		database.Log(q, offset, rowsPerPage),
 	)
 
 	users := []User{}
-	if err := ur.db.SelectContext(ctx, &users, q, offset, rowsPerPage); err != nil {
+	if err := us.db.SelectContext(ctx, &users, q, offset, rowsPerPage); err != nil {
 		return nil, errors.Wrap(err, "selecting users")
 	}
 
@@ -203,7 +212,7 @@ func (ur UserService) GetAll(ctx context.Context, traceID string, pageNumber int
 }
 
 // GetByID retrieves a User from the DB by its ID.
-func (ur UserService) GetByID(ctx context.Context, traceID string, claims auth.Claims, userID string) (User, error) {
+func (us userService) GetByID(ctx context.Context, traceID string, claims auth.Claims, userID string) (User, error) {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.getbyid")
 	defer span.End()
 
@@ -215,14 +224,14 @@ func (ur UserService) GetByID(ctx context.Context, traceID string, claims auth.C
 		return User{}, ErrForbidden
 	}
 
-	const q = ` SELECT * FROM users WHERE user_id = $1`
+	const q = `SELECT * FROM users WHERE user_id = $1`
 
-	ur.log.Printf("%s: %s: %s", traceID, "userService.GetByID",
+	us.log.Printf("%s: %s: %s", traceID, "userService.GetByID",
 		database.Log(q, userID),
 	)
 
 	var u User
-	if err := ur.db.GetContext(ctx, &u, q, userID); err != nil {
+	if err := us.db.GetContext(ctx, &u, q, userID); err != nil {
 		if err == sql.ErrNoRows {
 			return User{}, ErrNotFound
 		}
@@ -235,11 +244,11 @@ func (ur UserService) GetByID(ctx context.Context, traceID string, claims auth.C
 // Authenticate finds a user by their email and verifies their password. On
 // success it returns a Claims representing the user. The claims can be
 // used to generate a token for future authentication.
-func (ur UserService) Authenticate(ctx context.Context, traceID string, now time.Time, email, password string) (auth.Claims, error) {
+func (us userService) Authenticate(ctx context.Context, traceID string, now time.Time, email, password string) (auth.Claims, error) {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.authenticate")
 	defer span.End()
 
-	u, err := ur.getByEmail(ctx, traceID, email)
+	u, err := us.getByEmail(ctx, traceID, email)
 	if err != nil {
 		if err == ErrNotFound {
 			return auth.Claims{}, ErrAuthenticationFailure
@@ -267,18 +276,18 @@ func (ur UserService) Authenticate(ctx context.Context, traceID string, now time
 }
 
 // getByEmail retrieves a User in the DB by its email.
-func (ur UserService) getByEmail(ctx context.Context, traceID string, email string) (User, error) {
+func (us userService) getByEmail(ctx context.Context, traceID string, email string) (User, error) {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.getByEmail")
 	defer span.End()
 
 	const q = `SELECT * FROM users WHERE email = $1`
 
-	ur.log.Printf("%s: %s: %s", traceID, "user.getByEmail",
+	us.log.Printf("%s: %s: %s", traceID, "user.getByEmail",
 		database.Log(q, email),
 	)
 
 	var u User
-	if err := ur.db.GetContext(ctx, &u, q, email); err != nil {
+	if err := us.db.GetContext(ctx, &u, q, email); err != nil {
 		if err == sql.ErrNoRows {
 			return User{}, ErrNotFound
 		}

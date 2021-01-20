@@ -167,23 +167,34 @@ func run(log *log.Logger) error {
 	}()
 
 	// =========================================================================
-	// Prometheus Support
+	// Prometheus Support (metrics)
 
-	fieldKeys := []string{"method"}
-
-	counter := kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
+	requestCount := kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Namespace: "api",
 		Subsystem: cfg.Prometheus.ServiceName,
 		Name:      "request_count",
 		Help:      "Number of requests received.",
-	}, fieldKeys)
+	}, []string{"method"})
 
-	latency := kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
+	requestLatency := kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
 		Namespace: "api",
 		Subsystem: cfg.Prometheus.ServiceName,
 		Name:      "request_latency_microseconds",
 		Help:      "Total duration of requests in microseconds.",
-	}, fieldKeys)
+	}, []string{"method", "success"})
+
+	errorCount := kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Namespace: "api",
+		Subsystem: cfg.Prometheus.ServiceName,
+		Name:      "error_count",
+		Help:      "Number of requests received.",
+	}, []string{"method", "path"})
+
+	redMetrics := kitprometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+		Name:    "request_latency_microseconds",
+		Help:    "Total duration of requests in microseconds.",
+		Buckets: stdprometheus.DefBuckets,
+	}, []string{"method", "path", "status_code"})
 
 	// =========================================================================
 	// Start Tracing Support
@@ -235,7 +246,7 @@ func run(log *log.Logger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	handler := handlers.NewHTTPHandler(build, shutdown, log, counter, latency, auth, db)
+	handler := handlers.NewHTTPHandler(build, shutdown, log, errorCount, redMetrics, requestCount, requestLatency, auth, db)
 
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,

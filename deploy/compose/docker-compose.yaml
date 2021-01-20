@@ -5,7 +5,6 @@ networks:
     driver: bridge
 
 services:
-
   zipkin:
     container_name: zipkin
     networks:
@@ -39,8 +38,8 @@ services:
     networks:
       - shared-network
     ports:
-      - 3000:3000 # CRUD API
-      - 4000:4000 # DEBUG API
+      - 3000:3000
+      - 4000:4000
     depends_on:
       - zipkin
       - db
