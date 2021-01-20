@@ -12,7 +12,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"github.com/santiagoh1997/service-template/internal/business/auth"
-	"github.com/santiagoh1997/service-template/internal/foundation/database"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -47,15 +46,13 @@ type UserService interface {
 }
 
 type userService struct {
-	log *log.Logger
-	db  *sqlx.DB
+	db *sqlx.DB
 }
 
 // New constructs a UserService for api access.
 func New(log *log.Logger, db *sqlx.DB) UserService {
 	return userService{
-		log: log,
-		db:  db,
+		db: db,
 	}
 }
 
@@ -67,10 +64,6 @@ func (us userService) Create(ctx context.Context, traceID string, nur NewUserReq
 
 	// Check if the email is already in use.
 	const q1 = `SELECT COUNT(*) FROM users AS numUsers WHERE email=$1`
-
-	us.log.Printf("%s: %s: %s", traceID, "user.create",
-		database.Log(q1, nur.Email),
-	)
 
 	var numUsers int
 	if err := us.db.QueryRowContext(ctx, q1, nur.Email).Scan(&numUsers); err != nil {
@@ -102,11 +95,6 @@ func (us userService) Create(ctx context.Context, traceID string, nur NewUserReq
 		(user_id, email, password_hash, roles, name, last_name, country, date_created, date_updated)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
-
-	us.log.Printf("%s: %s: %s", traceID, "userService.Create",
-		database.Log(q, u.ID, u.Email, u.PasswordHash, u.Roles, u.Name, u.LastName, u.Country, u.DateCreated, u.DateUpdated),
-	)
-
 	if _, err := us.db.ExecContext(ctx, q, u.ID, u.Email, u.PasswordHash, u.Roles, u.Name, u.LastName, u.Country, u.DateCreated, u.DateUpdated); err != nil {
 		return User{}, errors.Wrap(err, "inserting user")
 	}
@@ -142,10 +130,6 @@ func (us userService) Update(ctx context.Context, traceID string, claims auth.Cl
 	WHERE
 		user_id=$6`
 
-	us.log.Printf("%s: %s: %s", traceID, "userService.Update",
-		database.Log(q, u.Name, u.LastName, u.Email, u.Country, u.DateUpdated, u.ID),
-	)
-
 	if _, err = us.db.ExecContext(ctx, q, u.Name, u.LastName, u.Email, u.Country, u.DateUpdated, u.ID); err != nil {
 		return User{}, errors.Wrap(err, "updating user")
 	}
@@ -172,10 +156,6 @@ func (us userService) Delete(ctx context.Context, traceID string, claims auth.Cl
 	WHERE
 		user_id = $1`
 
-	us.log.Printf("%s: %s: %s", traceID, "userService.Delete",
-		database.Log(q, userID),
-	)
-
 	if _, err := us.db.ExecContext(ctx, q, userID); err != nil {
 		return errors.Wrapf(err, "deleting user %s", userID)
 	}
@@ -199,10 +179,6 @@ func (us userService) GetAll(ctx context.Context, traceID string, pageNumber int
 
 	offset := (pageNumber - 1) * rowsPerPage
 
-	us.log.Printf("%s: %s: %s", traceID, "userService.GetAll",
-		database.Log(q, offset, rowsPerPage),
-	)
-
 	users := []User{}
 	if err := us.db.SelectContext(ctx, &users, q, offset, rowsPerPage); err != nil {
 		return nil, errors.Wrap(err, "selecting users")
@@ -225,10 +201,6 @@ func (us userService) GetByID(ctx context.Context, traceID string, claims auth.C
 	}
 
 	const q = `SELECT * FROM users WHERE user_id = $1`
-
-	us.log.Printf("%s: %s: %s", traceID, "userService.GetByID",
-		database.Log(q, userID),
-	)
 
 	var u User
 	if err := us.db.GetContext(ctx, &u, q, userID); err != nil {
@@ -281,10 +253,6 @@ func (us userService) getByEmail(ctx context.Context, traceID string, email stri
 	defer span.End()
 
 	const q = `SELECT * FROM users WHERE email = $1`
-
-	us.log.Printf("%s: %s: %s", traceID, "user.getByEmail",
-		database.Log(q, email),
-	)
 
 	var u User
 	if err := us.db.GetContext(ctx, &u, q, email); err != nil {

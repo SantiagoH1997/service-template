@@ -70,7 +70,7 @@ kind-delete:
 migrate:
 	go run cmd/service-admin/main.go migrate
 
-seed: migrate
+seed:
 	go run cmd/service-admin/main.go seed
 
 # ==============================================================================

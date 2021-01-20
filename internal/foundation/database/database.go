@@ -3,12 +3,12 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"net/url"
-	"strings"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // The database driver in use.
+	"github.com/pkg/errors"
+	"github.com/santiagoh1997/service-template/internal/business/data/schema"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -22,6 +22,7 @@ type Config struct {
 }
 
 // Open knows how to open a database connection based on the configuration.
+// It runs the necessary migrations prior to returning the DB client.
 func Open(cfg Config) (*sqlx.DB, error) {
 	sslMode := "require"
 	if cfg.DisableTLS {
@@ -40,7 +41,16 @@ func Open(cfg Config) (*sqlx.DB, error) {
 		RawQuery: q.Encode(),
 	}
 
-	return sqlx.Open("postgres", u.String())
+	db, err := sqlx.Open("postgres", u.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "connect database")
+	}
+
+	if err := schema.Migrate(db); err != nil {
+		return nil, errors.Wrap(err, "migrate database")
+	}
+
+	return db, nil
 }
 
 // StatusCheck returns an error if it can't successfully talk to the database.
@@ -52,29 +62,4 @@ func StatusCheck(ctx context.Context, db *sqlx.DB) error {
 	const q = `SELECT true`
 	var tmp bool
 	return db.QueryRowContext(ctx, q).Scan(&tmp)
-}
-
-// Log provides a pretty print version of the query and parameters.
-func Log(query string, args ...interface{}) string {
-	for i, arg := range args {
-		n := fmt.Sprintf("$%d", i+1)
-
-		var a string
-		switch v := arg.(type) {
-		case string:
-			a = fmt.Sprintf("%q", v)
-		case []byte:
-			a = string(v)
-		case []string:
-			a = strings.Join(v, ",")
-		default:
-			a = fmt.Sprintf("%v", v)
-		}
-
-		query = strings.Replace(query, n, a, 1)
-		query = strings.Replace(query, "\t", "", -1)
-		query = strings.Replace(query, "\n", " ", -1)
-	}
-
-	return query
 }
