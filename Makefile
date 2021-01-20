@@ -27,7 +27,7 @@ down:
 	docker-compose -f deploy/compose/docker-compose.yaml down --remove-orphans
 
 logs:
-	docker-compose logs -f
+	docker-compose -f deploy/compose/docker-compose.yaml logs
 
 # ==============================================================================
 # Running with k8s (using Kind)
