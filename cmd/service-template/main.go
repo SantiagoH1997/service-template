@@ -74,7 +74,7 @@ func run(log *log.Logger) error {
 		}
 		Zipkin struct {
 			ReporterURI string  `conf:"default:http://zipkin:9411/api/v2/spans"`
-			ServiceName string  `conf:"default:service-api"`
+			ServiceName string  `conf:"default:service-template"`
 			Probability float64 `conf:"default:0.05"`
 		}
 		Prometheus struct {

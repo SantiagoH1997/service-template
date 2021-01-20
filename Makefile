@@ -10,7 +10,7 @@ all: api
 api:
 	docker build \
 		-f build/Dockerfile \
-		-t service-api-amd64:1.0 \
+		-t service-template-amd64:1.0 \
 		--build-arg VCS_REF=`git rev-parse HEAD` \
 		--build-arg BUILD_DATE=`date -u +”%Y-%m-%dT%H:%M:%SZ”` \
 		.
@@ -39,27 +39,27 @@ kind-down:
 	kind delete cluster --name service-template-cluster
 
 kind-load:
-	kind load docker-image service-api-amd64:1.0 --name service-template-cluster
+	kind load docker-image service-template-amd64:1.0 --name service-template-cluster
 
 kind-services:
 	kustomize build deploy/k8s/dev | kubectl apply -f -
 
 kind-update-api: api
-	kind load docker-image service-api-amd64:1.0 --name service-template-cluster
-	kubectl delete pods -lapp=service-api
+	kind load docker-image service-template-amd64:1.0 --name service-template-cluster
+	kubectl delete pods -lapp=service-template
 
 kind-logs:
-	kubectl logs -lapp=service-api --all-containers=true -f
+	kubectl logs -lapp=service-template --all-containers=true -f
 
 kind-status:
 	kubectl get nodes
 	kubectl get pods --watch
 
 kind-status-full:
-	kubectl describe pod -lapp=service-api
+	kubectl describe pod -lapp=service-template
 
 kind-shell:
-	kubectl exec -it $(shell kubectl get pods | grep service-api | cut -c1-26) --container app -- /bin/sh
+	kubectl exec -it $(shell kubectl get pods | grep service-template | cut -c1-26) --container app -- /bin/sh
 
 kind-delete:
 	kustomize build deploy/k8s/dev | kubectl delete -f -

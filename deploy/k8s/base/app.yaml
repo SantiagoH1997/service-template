@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-api
+  name: service-template
 spec:
   selector:
     matchLabels:
-      app: service-api
+      app: service-template
   template:
     metadata:
       labels:
-        app: service-api
+        app: service-template
     spec:
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
@@ -20,7 +20,7 @@ spec:
         - name: zipkin
           containerPort: 9411
       - name: app
-        image: service-api-amd64:1.0
+        image: service-template-amd64:1.0
         env:
         - name: SERVICE_DB_HOST
           valueFrom:
@@ -69,10 +69,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: service-api
+  name: service-template
 spec:
   selector:
-    service: service-api
+    service: service-template
   ports:
   - name: zipkin
     port: 9411

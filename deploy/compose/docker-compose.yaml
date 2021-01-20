@@ -34,8 +34,8 @@ services:
     ports:
       - 5432:5432      
 
-  service-api:
-    container_name: service-api
+  service-template:
+    container_name: service-template
     build:
       context: ../..
       dockerfile: build/Dockerfile
