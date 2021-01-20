@@ -13,7 +13,7 @@ var ErrHelp = errors.New("provided help")
 
 // Migrate creates the schema in the database.
 func Migrate(cfg database.Config) error {
-	db, err := database.Open(cfg)
+	db, err := database.NewDBClient(cfg)
 	if err != nil {
 		return errors.Wrap(err, "connect database")
 	}

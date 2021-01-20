@@ -39,7 +39,7 @@ var (
 func NewUnit(t *testing.T) (*log.Logger, *sqlx.DB, func()) {
 	c := startContainer(t, dbImage, dbPort, dbArgs...)
 
-	db, err := database.Open(database.Config{
+	db, err := database.NewDBClient(database.Config{
 		User:       "postgres",
 		Password:   "postgres",
 		Host:       c.Host,
@@ -68,11 +68,6 @@ func NewUnit(t *testing.T) (*log.Logger, *sqlx.DB, func()) {
 		dumpContainerLogs(t, c.ID)
 		stopContainer(t, c.ID)
 		t.Fatalf("Database never ready: %v", pingError)
-	}
-
-	if err := schema.Migrate(db); err != nil {
-		stopContainer(t, c.ID)
-		t.Fatalf("Migrating error: %s", err)
 	}
 
 	// teardown is the function that should be invoked when the caller is done

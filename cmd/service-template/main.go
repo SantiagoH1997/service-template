@@ -151,7 +151,7 @@ func run(log *log.Logger) error {
 
 	log.Println("main: Initializing database support")
 
-	db, err := database.Open(database.Config{
+	db, err := database.NewDBClient(database.Config{
 		User:       cfg.DB.User,
 		Password:   cfg.DB.Password,
 		Host:       cfg.DB.Host,

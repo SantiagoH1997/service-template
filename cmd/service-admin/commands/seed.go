@@ -10,7 +10,7 @@ import (
 
 // Seed loads test data into the database.
 func Seed(cfg database.Config) error {
-	db, err := database.Open(cfg)
+	db, err := database.NewDBClient(cfg)
 	if err != nil {
 		return errors.Wrap(err, "connect database")
 	}
