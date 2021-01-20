@@ -15,10 +15,14 @@ services:
 
   prometheus:
     image: quay.io/prometheus/prometheus:latest
+    ports:
+      - 9090:9090
     networks:
       - shared-network
-    ports:
-     - 9090:9090
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus.yml
 
   db:
     container_name: service_db
@@ -43,3 +47,6 @@ services:
     depends_on:
       - zipkin
       - db
+
+volumes:
+  prometheus-data:
