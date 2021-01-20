@@ -17,7 +17,7 @@ import (
 	"github.com/santiagoh1997/service-template/internal/business/handlers"
 	"github.com/santiagoh1997/service-template/internal/business/service"
 	"github.com/santiagoh1997/service-template/internal/business/tests"
-	"github.com/santiagoh1997/service-template/internal/foundation/web"
+	"github.com/santiagoh1997/service-template/internal/pkg/web"
 )
 
 // UserTests holds methods for each user subtest. This type allows passing

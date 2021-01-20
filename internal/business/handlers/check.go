@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/santiagoh1997/service-template/internal/foundation/database"
-	"github.com/santiagoh1997/service-template/internal/foundation/web"
+	"github.com/santiagoh1997/service-template/internal/pkg/database"
+	"github.com/santiagoh1997/service-template/internal/pkg/web"
 	"go.opentelemetry.io/otel/trace"
 )
 

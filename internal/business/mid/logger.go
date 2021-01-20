@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/santiagoh1997/service-template/internal/foundation/web"
+	"github.com/santiagoh1997/service-template/internal/pkg/web"
 	"go.opentelemetry.io/otel/trace"
 )
 

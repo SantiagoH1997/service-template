@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/santiagoh1997/service-template/internal/business/data/schema"
-	"github.com/santiagoh1997/service-template/internal/foundation/database"
+	"github.com/santiagoh1997/service-template/internal/pkg/database"
 )
 
 // Seed loads test data into the database.

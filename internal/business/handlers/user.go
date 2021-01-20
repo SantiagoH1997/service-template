@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/santiagoh1997/service-template/internal/business/auth"
 	"github.com/santiagoh1997/service-template/internal/business/service"
-	"github.com/santiagoh1997/service-template/internal/foundation/web"
+	"github.com/santiagoh1997/service-template/internal/pkg/web"
 	"go.opentelemetry.io/otel/trace"
 )
 

@@ -21,7 +21,7 @@ import (
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"github.com/santiagoh1997/service-template/internal/business/auth"
 	"github.com/santiagoh1997/service-template/internal/business/handlers"
-	"github.com/santiagoh1997/service-template/internal/foundation/database"
+	"github.com/santiagoh1997/service-template/internal/pkg/database"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/trace/zipkin"
 	"go.opentelemetry.io/otel/sdk/trace"

@@ -1,6 +1,6 @@
 # Service Template
 
-Service Template is a model to take as a reference when building services in Go, containing a set of web utilities in the `web` package, under the `/foundation/web` folder.
+Service Template is a model to take as a reference when building services in Go, containing a set of web utilities in the `web` package, under the `/pkg/web` folder.
 
 It uses a Postgres as the main data storage, running locally as a Docker container.
 

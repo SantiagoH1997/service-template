@@ -14,7 +14,7 @@ import (
 	"github.com/santiagoh1997/service-template/internal/business/auth"
 	"github.com/santiagoh1997/service-template/internal/business/mid"
 	"github.com/santiagoh1997/service-template/internal/business/service"
-	"github.com/santiagoh1997/service-template/internal/foundation/web"
+	"github.com/santiagoh1997/service-template/internal/pkg/web"
 )
 
 // NewHTTPHandler constructs an http.Handler with all the application routes defined.

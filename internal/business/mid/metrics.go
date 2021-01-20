@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/metrics"
-	"github.com/santiagoh1997/service-template/internal/foundation/web"
+	"github.com/santiagoh1997/service-template/internal/pkg/web"
 	"go.opentelemetry.io/otel/trace"
 )
 

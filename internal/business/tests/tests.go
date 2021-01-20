@@ -15,7 +15,7 @@ import (
 	"github.com/santiagoh1997/service-template/internal/business/auth"
 	"github.com/santiagoh1997/service-template/internal/business/data/schema"
 	"github.com/santiagoh1997/service-template/internal/business/service"
-	"github.com/santiagoh1997/service-template/internal/foundation/database"
+	"github.com/santiagoh1997/service-template/internal/pkg/database"
 )
 
 // Success and failure markers.

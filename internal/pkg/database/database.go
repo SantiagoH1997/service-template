@@ -55,7 +55,7 @@ func Open(cfg Config) (*sqlx.DB, error) {
 
 // StatusCheck returns an error if it can't successfully talk to the database.
 func StatusCheck(ctx context.Context, db *sqlx.DB) error {
-	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "foundation.database.statuscheck")
+	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "internal.pkg.database.statuscheck")
 	defer span.End()
 
 	// Running this query forces a round trip to the database.

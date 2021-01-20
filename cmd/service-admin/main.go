@@ -8,7 +8,7 @@ import (
 	"github.com/ardanlabs/conf"
 	"github.com/pkg/errors"
 	"github.com/santiagoh1997/service-template/cmd/service-admin/commands"
-	"github.com/santiagoh1997/service-template/internal/foundation/database"
+	"github.com/santiagoh1997/service-template/internal/pkg/database"
 )
 
 // build is the git version of this program. It is set using build flags in the makefile.

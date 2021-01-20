@@ -11,7 +11,7 @@ import (
 
 // Respond converts a Go value to JSON and sends it to the client.
 func Respond(ctx context.Context, w http.ResponseWriter, data interface{}, statusCode int) error {
-	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "foundation.web.respond")
+	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "internal.pkg.web.respond")
 	defer span.End()
 
 	// Set the status code for the request logger middleware.
