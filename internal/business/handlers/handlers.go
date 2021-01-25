@@ -21,17 +21,29 @@ import (
 func NewHTTPHandler(
 	build string,
 	shutdown chan os.Signal,
+	us service.UserService,
 	log *log.Logger,
 	errorCount metrics.Counter,
 	redMetrics metrics.Histogram,
-	requestCount metrics.Counter,
-	requestLatency metrics.Histogram,
 	a *auth.Auth,
 	db *sqlx.DB,
 ) http.Handler {
 
+	// Setting up the common middleware based on the parameters passed in.
+	var commonMiddleware []web.Middleware
+	if log != nil {
+		commonMiddleware = []web.Middleware{
+			mid.Logger(log),
+			mid.Errors(log),
+		}
+		if errorCount != nil && redMetrics != nil {
+			commonMiddleware = append(commonMiddleware, mid.Metrics(errorCount, redMetrics))
+		}
+		commonMiddleware = append(commonMiddleware, mid.Panics(log))
+	}
+
 	// The web.App holds all routes and all the common Middleware.
-	app := web.NewApp(shutdown, mid.Logger(log), mid.Errors(log), mid.Metrics(errorCount, redMetrics), mid.Panics(log))
+	app := web.NewApp(shutdown, commonMiddleware...)
 
 	// Register debug check endpoints.
 	ch := checkHandler{
@@ -50,8 +62,6 @@ func NewHTTPHandler(
 	app.HandleDebug(http.MethodGet, "/metrics", prometheusHandler)
 
 	// Register main endpoints.
-	us := service.New(log, db)
-	us = service.NewInstrumentingUserService(requestCount, requestLatency, us)
 	uh := userHandler{
 		svc:  us,
 		auth: a,

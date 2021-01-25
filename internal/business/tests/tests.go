@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-kit/kit/metrics"
 	"github.com/jmoiron/sqlx"
 	"github.com/santiagoh1997/service-template/internal/business/auth"
 	"github.com/santiagoh1997/service-template/internal/business/data/schema"
@@ -89,6 +90,7 @@ type Test struct {
 	DB       *sqlx.DB
 	Log      *log.Logger
 	Auth     *auth.Auth
+	Metrics  []metrics.Counter
 	KID      string
 	Teardown func()
 
@@ -142,7 +144,7 @@ func NewIntegration(t *testing.T) *Test {
 func (test *Test) Token(email, pass string) string {
 	test.t.Log("Generating token for test ...")
 
-	u := service.New(test.Log, test.DB)
+	u := service.NewBasicService(test.Log, test.DB)
 	claims, err := u.Authenticate(context.Background(), test.TraceID, time.Now(), email, pass)
 	if err != nil {
 		test.t.Fatal(err)

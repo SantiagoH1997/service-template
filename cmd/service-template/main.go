@@ -21,6 +21,7 @@ import (
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"github.com/santiagoh1997/service-template/internal/business/auth"
 	"github.com/santiagoh1997/service-template/internal/business/handlers"
+	"github.com/santiagoh1997/service-template/internal/business/service"
 	"github.com/santiagoh1997/service-template/internal/pkg/database"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/trace/zipkin"
@@ -246,7 +247,8 @@ func run(log *log.Logger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	handler := handlers.NewHTTPHandler(build, shutdown, log, errorCount, redMetrics, requestCount, requestLatency, auth, db)
+	us := service.New(log, requestCount, requestLatency, db)
+	handler := handlers.NewHTTPHandler(build, shutdown, us, log, errorCount, redMetrics, auth, db)
 
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,

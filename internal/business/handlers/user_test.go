@@ -35,8 +35,10 @@ func TestGetUsers(t *testing.T) {
 	t.Cleanup(test.Teardown)
 
 	shutdown := make(chan os.Signal, 1)
+
+	us := service.NewBasicService(test.Log, test.DB)
 	ut := UserTests{
-		app:        handlers.NewHTTPHandler("test", shutdown, test.Log, test.Auth, test.DB),
+		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
 		userToken:  test.Token("user@example.com", "password"),
 		adminToken: test.Token("admin@example.com", "password"),
@@ -187,8 +189,10 @@ func TestGetUser(t *testing.T) {
 	t.Cleanup(test.Teardown)
 
 	shutdown := make(chan os.Signal, 1)
+
+	us := service.NewBasicService(test.Log, test.DB)
 	ut := UserTests{
-		app:        handlers.NewHTTPHandler("test", shutdown, test.Log, test.Auth, test.DB),
+		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
 		userToken:  test.Token("user@example.com", "password"),
 		adminToken: test.Token("admin@example.com", "password"),
@@ -326,8 +330,10 @@ func TestPostUser(t *testing.T) {
 	t.Cleanup(test.Teardown)
 
 	shutdown := make(chan os.Signal, 1)
+
+	us := service.NewBasicService(test.Log, test.DB)
 	ut := UserTests{
-		app:        handlers.NewHTTPHandler("test", shutdown, test.Log, test.Auth, test.DB),
+		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
 		userToken:  test.Token("user@example.com", "password"),
 		adminToken: test.Token("admin@example.com", "password"),
@@ -473,8 +479,10 @@ func TestPutUser(t *testing.T) {
 	t.Cleanup(test.Teardown)
 
 	shutdown := make(chan os.Signal, 1)
+
+	us := service.NewBasicService(test.Log, test.DB)
 	ut := UserTests{
-		app:        handlers.NewHTTPHandler("test", shutdown, test.Log, test.Auth, test.DB),
+		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
 		userToken:  test.Token("user@example.com", "password"),
 		adminToken: test.Token("admin@example.com", "password"),
@@ -646,8 +654,10 @@ func TestDeleteUser(t *testing.T) {
 	t.Cleanup(test.Teardown)
 
 	shutdown := make(chan os.Signal, 1)
+
+	us := service.NewBasicService(test.Log, test.DB)
 	ut := UserTests{
-		app:        handlers.NewHTTPHandler("test", shutdown, test.Log, test.Auth, test.DB),
+		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
 		userToken:  test.Token("user@example.com", "password"),
 		adminToken: test.Token("admin@example.com", "password"),
@@ -768,8 +778,10 @@ func TestGetToken(t *testing.T) {
 	t.Cleanup(test.Teardown)
 
 	shutdown := make(chan os.Signal, 1)
+
+	us := service.NewBasicService(test.Log, test.DB)
 	ut := UserTests{
-		app:        handlers.NewHTTPHandler("test", shutdown, test.Log, test.Auth, test.DB),
+		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
 		userToken:  test.Token("user@example.com", "password"),
 		adminToken: test.Token("admin@example.com", "password"),

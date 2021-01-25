@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/go-kit/kit/metrics"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -49,11 +50,19 @@ type userService struct {
 	db *sqlx.DB
 }
 
-// New constructs a UserService for api access.
-func New(log *log.Logger, db *sqlx.DB) UserService {
+// NewBasicService constructs a UserService for api access.
+func NewBasicService(log *log.Logger, db *sqlx.DB) UserService {
 	return userService{
 		db: db,
 	}
+}
+
+// New returns a UserService with instrumentation features.
+func New(log *log.Logger, requestCount metrics.Counter, requestLatency metrics.Histogram, db *sqlx.DB) UserService {
+	us := NewBasicService(log, db)
+	us = NewInstrumentingDecorator(requestCount, requestLatency, us)
+
+	return us
 }
 
 // Create creates a new user, generates a password hash,
