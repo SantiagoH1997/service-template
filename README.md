@@ -18,7 +18,7 @@ Postgres is the main data storage for the service, but it can be easily replaced
 ✔  Authentication/Authorization  
 ✔  Data persistence using Postgres  
 ✔  JWT generation  
-✔  Middleware (authorization, logging, metrics, panic and error handling) 
+✔  Middleware (authorization, logging, metrics, panic and error handling)  
 ✔  Docker support  
 ✔  Kubernetes support  
 ✔  Metrics (Prometheus)  
