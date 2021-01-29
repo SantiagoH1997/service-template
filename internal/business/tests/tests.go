@@ -15,6 +15,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/santiagoh1997/service-template/internal/business/auth"
 	"github.com/santiagoh1997/service-template/internal/business/data/schema"
+	"github.com/santiagoh1997/service-template/internal/business/repository"
 	"github.com/santiagoh1997/service-template/internal/business/service"
 	"github.com/santiagoh1997/service-template/internal/pkg/database"
 )
@@ -144,7 +145,8 @@ func NewIntegration(t *testing.T) *Test {
 func (test *Test) Token(email, pass string) string {
 	test.t.Log("Generating token for test ...")
 
-	u := service.NewBasicService(test.Log, test.DB)
+	ur, _ := repository.NewRepository(test.DB)
+	u := service.NewBasicService(ur)
 	claims, err := u.Authenticate(context.Background(), test.TraceID, time.Now(), email, pass)
 	if err != nil {
 		test.t.Fatal(err)

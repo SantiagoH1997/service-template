@@ -10,9 +10,9 @@ import (
 type User struct {
 	ID           string         `db:"user_id" json:"id"`
 	Name         string         `db:"name" json:"name"`
-	LastName     string         `db:"last_name"`
+	LastName     string         `db:"last_name" json:"last_name"`
 	Email        string         `db:"email" json:"email"`
-	Country      string         `db:"country"`
+	Country      string         `db:"country" json:"country"`
 	Roles        pq.StringArray `db:"roles" json:"roles"`
 	PasswordHash []byte         `db:"password_hash" json:"-"`
 	DateCreated  time.Time      `db:"date_created" json:"date_created"`
@@ -33,7 +33,6 @@ type NewUserRequest struct {
 // UpdateUserRequest contains the information needed to modify an existing User.
 type UpdateUserRequest struct {
 	Name     string `json:"name"`
-	Email    string `json:"email" validate:"omitempty,email"`
 	LastName string `json:"last_name" validate:"required"`
 	Country  string `json:"country" validate:"required"`
 }

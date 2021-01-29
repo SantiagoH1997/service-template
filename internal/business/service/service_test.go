@@ -10,15 +10,17 @@ import (
 	"github.com/google/uuid"
 	"github.com/santiagoh1997/service-template/internal/business/auth"
 	"github.com/santiagoh1997/service-template/internal/business/data/schema"
+	"github.com/santiagoh1997/service-template/internal/business/repository"
 	"github.com/santiagoh1997/service-template/internal/business/service"
 	"github.com/santiagoh1997/service-template/internal/business/tests"
 )
 
 func TestCreate(t *testing.T) {
-	log, db, teardown := tests.NewUnit(t)
+	_, db, teardown := tests.NewUnit(t)
 	t.Cleanup(teardown)
 
-	us := service.New(log, db)
+	ur, _ := repository.NewRepository(db)
+	us := service.NewBasicService(ur)
 	ctx := context.Background()
 	now := time.Date(2018, time.October, 1, 0, 0, 0, 0, time.UTC)
 	traceID := "00000000-0000-0000-0000-000000000000"
@@ -81,10 +83,11 @@ func TestCreate(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	log, db, teardown := tests.NewUnit(t)
+	_, db, teardown := tests.NewUnit(t)
 	t.Cleanup(teardown)
 
-	us := service.New(log, db)
+	ur, _ := repository.NewRepository(db)
+	us := service.NewBasicService(ur)
 	ctx := context.Background()
 	now := time.Date(2018, time.October, 1, 0, 0, 0, 0, time.UTC)
 	traceID := "00000000-0000-0000-0000-000000000000"
@@ -107,7 +110,6 @@ func TestUpdate(t *testing.T) {
 
 		uur := service.UpdateUserRequest{
 			Name:     "Jorgito",
-			Email:    "jorgito@porcel.com",
 			LastName: "Porcel",
 			Country:  "Argentina",
 		}
@@ -123,61 +125,8 @@ func TestUpdate(t *testing.T) {
 			Roles: []string{auth.RoleUser},
 		}
 
-		_, err = us.Update(ctx, traceID, claims, u.ID, uur, now)
-		if err != nil {
+		if err = us.Update(ctx, traceID, claims, u.ID, uur, now); err != nil {
 			tt.Fatalf("\t%s\tUpdate() err = %v, want %v", tests.Failed, err, nil)
-		}
-	})
-
-	t.Run("Duplicated email case", func(tt *testing.T) {
-		nur1 := service.NewUserRequest{
-			Name:            "Santiago",
-			Email:           "santiago@santiago.com",
-			LastName:        "Hernández",
-			Country:         "Argentina",
-			Roles:           []string{auth.RoleAdmin},
-			Password:        "password",
-			PasswordConfirm: "password",
-		}
-		nur2 := service.NewUserRequest{
-			Name:            "Jorge",
-			Email:           "jorge@porcel.com",
-			LastName:        "Porcel",
-			Country:         "Argentina",
-			Roles:           []string{auth.RoleAdmin},
-			Password:        "password",
-			PasswordConfirm: "password",
-		}
-
-		u1, err := us.Create(ctx, traceID, nur1, now)
-		if err != nil {
-			tt.Fatalf("\t%s\tCreate() err = %v, want %v", tests.Failed, err, nil)
-		}
-		u2, err := us.Create(ctx, traceID, nur2, now)
-		if err != nil {
-			tt.Fatalf("\t%s\tCreate() err = %v, want %v", tests.Failed, err, nil)
-		}
-
-		claims := auth.Claims{
-			StandardClaims: jwt.StandardClaims{
-				Issuer:    "service template",
-				Subject:   u2.ID,
-				Audience:  "clients",
-				ExpiresAt: now.Add(time.Hour).Unix(),
-				IssuedAt:  now.Unix(),
-			},
-			Roles: []string{auth.RoleUser},
-		}
-
-		uur := service.UpdateUserRequest{
-			Name:     "Jorgito",
-			Email:    u1.Email,
-			LastName: "Porcel",
-			Country:  "Argentina",
-		}
-		_, err = us.Update(ctx, traceID, claims, u2.ID, uur, now)
-		if err == nil {
-			tt.Fatalf("\t%s\tCreate() err = %v, want err", tests.Failed, err)
 		}
 	})
 
@@ -190,27 +139,27 @@ func TestUpdate(t *testing.T) {
 				ExpiresAt: now.Add(time.Hour).Unix(),
 				IssuedAt:  now.Unix(),
 			},
-			Roles: []string{auth.RoleUser},
+			Roles: []string{auth.RoleAdmin},
 		}
 
 		uur := service.UpdateUserRequest{
 			Name:     "Jorgito",
-			Email:    "email@gmail.com",
 			LastName: "Porcel",
 			Country:  "Argentina",
 		}
 
-		if _, err := us.Update(ctx, traceID, claims, "invalidID", uur, now); err != service.ErrInvalidID {
-			tt.Fatalf("\t%s\tCreate() err = %v, want %v", tests.Failed, err, service.ErrInvalidID)
+		if err := us.Update(ctx, traceID, claims, "invalidID", uur, now); err != service.ErrInvalidID {
+			tt.Fatalf("\t%s\tUpdate() err = %v, want %v", tests.Failed, err, service.ErrInvalidID)
 		}
 	})
 }
 
 func TestDelete(t *testing.T) {
-	log, db, teardown := tests.NewUnit(t)
+	_, db, teardown := tests.NewUnit(t)
 	t.Cleanup(teardown)
 
-	us := service.New(log, db)
+	ur, _ := repository.NewRepository(db)
+	us := service.NewBasicService(ur)
 	ctx := context.Background()
 	now := time.Date(2018, time.October, 1, 0, 0, 0, 0, time.UTC)
 	traceID := "00000000-0000-0000-0000-000000000000"
@@ -221,7 +170,7 @@ func TestDelete(t *testing.T) {
 			Email:           "santiago@santiago.com",
 			LastName:        "Hernández",
 			Country:         "Argentina",
-			Roles:           []string{auth.RoleAdmin},
+			Roles:           []string{auth.RoleUser},
 			Password:        "password",
 			PasswordConfirm: "password",
 		}
@@ -346,7 +295,7 @@ func TestDelete(t *testing.T) {
 				ExpiresAt: now.Add(time.Hour).Unix(),
 				IssuedAt:  now.Unix(),
 			},
-			Roles: []string{auth.RoleUser},
+			Roles: []string{auth.RoleAdmin},
 		}
 
 		// Attempting to delete User with invalid ID...
@@ -356,53 +305,16 @@ func TestDelete(t *testing.T) {
 	})
 }
 
-func TestGetAll(t *testing.T) {
-	log, db, teardown := tests.NewUnit(t)
-	t.Cleanup(teardown)
-
-	if err := schema.Seed(db); err != nil {
-		t.Fatalf("\tschema.Seed() err = %v", err)
-	}
-
-	us := service.New(log, db)
-
-	ctx := context.Background()
-	traceID := "00000000-0000-0000-0000-000000000000"
-
-	t.Run("1 user per page", func(tt *testing.T) {
-		users1, err := us.GetAll(ctx, traceID, 1, 1)
-		if err != nil {
-			tt.Fatalf("\t%s\tGetAll() err = %v, want %v", tests.Failed, err, nil)
-		}
-
-		if len(users1) != 1 {
-			tt.Fatalf("\t%s\tGetAll len(users) = %d, want %d", tests.Failed, len(users1), 1)
-		}
-
-		users2, err := us.GetAll(ctx, traceID, 2, 1)
-		if err != nil {
-			tt.Fatalf("\t%s\tGetAll() err = %v, want %v", tests.Failed, err, nil)
-		}
-
-		if len(users2) != 1 {
-			tt.Fatalf("\t%s\tGetAll() len(users) = %d, want %d", tests.Failed, len(users1), 1)
-		}
-
-		if users1[0].ID == users2[0].ID {
-			tt.Fatalf("\t%sGetAll() should return different users on different pages", tests.Failed)
-		}
-	})
-}
-
 func TestGetByID(t *testing.T) {
-	log, db, teardown := tests.NewUnit(t)
+	_, db, teardown := tests.NewUnit(t)
 	t.Cleanup(teardown)
 
 	if err := schema.Seed(db); err != nil {
 		t.Fatalf("\tschema.Seed() err = %v", err)
 	}
 
-	us := service.New(log, db)
+	ur, _ := repository.NewRepository(db)
+	us := service.NewBasicService(ur)
 	now := time.Date(2018, time.October, 1, 0, 0, 0, 0, time.UTC)
 	ctx := context.Background()
 	traceID := "00000000-0000-0000-0000-000000000000"
@@ -526,13 +438,14 @@ func TestGetByID(t *testing.T) {
 }
 
 func TestAuthenticate(t *testing.T) {
-	log, db, teardown := tests.NewUnit(t)
+	_, db, teardown := tests.NewUnit(t)
 	t.Cleanup(teardown)
 
 	ctx := context.Background()
 	now := time.Date(2018, time.October, 1, 0, 0, 0, 0, time.UTC)
 	traceID := "00000000-0000-0000-0000-000000000000"
-	us := service.New(log, db)
+	ur, _ := repository.NewRepository(db)
+	us := service.NewBasicService(ur)
 
 	t.Run("Success case", func(tt *testing.T) {
 		nur := service.NewUserRequest{

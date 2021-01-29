@@ -33,7 +33,7 @@ func (d *instrumentingDecorator) Create(ctx context.Context, traceID string, nur
 	return d.Service.Create(ctx, traceID, nur, now)
 }
 
-func (d *instrumentingDecorator) Update(ctx context.Context, traceID string, claims auth.Claims, userID string, uur UpdateUserRequest, now time.Time) (user User, err error) {
+func (d *instrumentingDecorator) Update(ctx context.Context, traceID string, claims auth.Claims, userID string, uur UpdateUserRequest, now time.Time) (err error) {
 	defer func(begin time.Time) {
 		d.requestCount.With("method", "update").Add(1)
 		d.requestLatency.With("method", "update", "success", fmt.Sprint(err == nil)).Observe(time.Since(begin).Seconds())
@@ -49,15 +49,6 @@ func (d *instrumentingDecorator) Delete(ctx context.Context, traceID string, cla
 	}(time.Now())
 
 	return d.Service.Delete(ctx, traceID, claims, userID)
-}
-
-func (d *instrumentingDecorator) GetAll(ctx context.Context, traceID string, pageNumber int, rowsPerPage int) (users []User, err error) {
-	defer func(begin time.Time) {
-		d.requestCount.With("method", "get_all").Add(1)
-		d.requestLatency.With("method", "get_all", "success", fmt.Sprint(err == nil)).Observe(time.Since(begin).Seconds())
-	}(time.Now())
-
-	return d.Service.GetAll(ctx, traceID, pageNumber, rowsPerPage)
 }
 
 func (d *instrumentingDecorator) GetByID(ctx context.Context, traceID string, claims auth.Claims, userID string) (user User, err error) {

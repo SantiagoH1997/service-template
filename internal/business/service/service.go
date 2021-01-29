@@ -3,14 +3,11 @@ package service
 
 import (
 	"context"
-	"database/sql"
-	"log"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-kit/kit/metrics"
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"github.com/santiagoh1997/service-template/internal/business/auth"
 	"go.opentelemetry.io/otel/trace"
@@ -39,46 +36,41 @@ var (
 // UserService manages the set of API's for user access.
 type UserService interface {
 	Create(ctx context.Context, traceID string, nur NewUserRequest, now time.Time) (User, error)
-	Update(ctx context.Context, traceID string, claims auth.Claims, userID string, uur UpdateUserRequest, now time.Time) (User, error)
+	Update(ctx context.Context, traceID string, claims auth.Claims, userID string, uur UpdateUserRequest, now time.Time) error
 	Delete(ctx context.Context, traceID string, claims auth.Claims, userID string) error
-	GetAll(ctx context.Context, traceID string, pageNumber int, rowsPerPage int) ([]User, error)
 	GetByID(ctx context.Context, traceID string, claims auth.Claims, userID string) (User, error)
 	Authenticate(ctx context.Context, traceID string, now time.Time, email, password string) (auth.Claims, error)
 }
 
 type userService struct {
-	db *sqlx.DB
+	repo Repository
 }
 
 // NewBasicService constructs a UserService for api access.
-func NewBasicService(log *log.Logger, db *sqlx.DB) UserService {
+func NewBasicService(repo Repository) UserService {
 	return userService{
-		db: db,
+		repo: repo,
 	}
 }
 
 // New returns a UserService with instrumentation features.
-func New(log *log.Logger, requestCount metrics.Counter, requestLatency metrics.Histogram, db *sqlx.DB) UserService {
-	us := NewBasicService(log, db)
+func New(repo Repository, requestCount metrics.Counter, requestLatency metrics.Histogram) UserService {
+	us := NewBasicService(repo)
 	us = NewInstrumentingDecorator(requestCount, requestLatency, us)
 
 	return us
 }
 
-// Create creates a new user, generates a password hash,
-// and saves it into the DB.
+// Create creates a new user, generating a password hash.
 func (us userService) Create(ctx context.Context, traceID string, nur NewUserRequest, now time.Time) (User, error) {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.create")
 	defer span.End()
 
-	// Check if the email is already in use.
-	const q1 = `SELECT COUNT(*) FROM users AS numUsers WHERE email=$1`
-
-	var numUsers int
-	if err := us.db.QueryRowContext(ctx, q1, nur.Email).Scan(&numUsers); err != nil {
-		return User{}, errors.Wrapf(err, "looking for users with the email %s", nur.Email)
+	isInUse, err := us.repo.CheckEmailInUse(ctx, nur.Email)
+	if err != nil {
+		return User{}, errors.Wrap(err, "creating user")
 	}
-	if numUsers != 0 {
+	if isInUse {
 		return User{}, ErrDuplicatedEmail
 	}
 
@@ -96,54 +88,31 @@ func (us userService) Create(ctx context.Context, traceID string, nur NewUserReq
 		Country:      nur.Country,
 		PasswordHash: hash,
 		Roles:        nur.Roles,
-		DateCreated:  now.UTC(),
-		DateUpdated:  now.UTC(),
 	}
 
-	const q = `INSERT INTO users
-		(user_id, email, password_hash, roles, name, last_name, country, date_created, date_updated)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-	`
-	if _, err := us.db.ExecContext(ctx, q, u.ID, u.Email, u.PasswordHash, u.Roles, u.Name, u.LastName, u.Country, u.DateCreated, u.DateUpdated); err != nil {
+	saved, err := us.repo.Create(ctx, u, now)
+	if err != nil {
 		return User{}, errors.Wrap(err, "inserting user")
 	}
 
-	return u, nil
+	return saved, nil
 }
 
 // Update allows a client to update certain fields of a saved User.
-func (us userService) Update(ctx context.Context, traceID string, claims auth.Claims, userID string, uur UpdateUserRequest, now time.Time) (User, error) {
+func (us userService) Update(ctx context.Context, traceID string, claims auth.Claims, userID string, uur UpdateUserRequest, now time.Time) error {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.update")
 	defer span.End()
 
 	u, err := us.GetByID(ctx, traceID, claims, userID)
 	if err != nil {
-		return User{}, err
+		return err
 	}
 
-	u.Name = uur.Name
-	u.Country = uur.Country
-	u.LastName = uur.LastName
-	u.Email = uur.Email
-	u.DateUpdated = now.UTC()
-
-	const q = `
-	UPDATE
-		users
-	SET
-		"name" = $1,
-		"last_name" = $2,
-		"email" = $3,
-		"country" = $4,
-		"date_updated" = $5
-	WHERE
-		user_id=$6`
-
-	if _, err = us.db.ExecContext(ctx, q, u.Name, u.LastName, u.Email, u.Country, u.DateUpdated, u.ID); err != nil {
-		return User{}, errors.Wrap(err, "updating user")
+	if err = us.repo.Update(ctx, u.ID, uur.Name, uur.LastName, uur.Country, now); err != nil {
+		return errors.Wrap(err, "updating user")
 	}
 
-	return u, nil
+	return nil
 }
 
 // Delete deletes a User by its ID.
@@ -151,72 +120,41 @@ func (us userService) Delete(ctx context.Context, traceID string, claims auth.Cl
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.delete")
 	defer span.End()
 
-	if _, err := uuid.Parse(userID); err != nil {
-		return ErrInvalidID
-	}
-
 	if !claims.Authorized(auth.RoleAdmin) && claims.Subject != userID {
 		return ErrForbidden
 	}
 
-	const q = `
-	DELETE FROM
-		users
-	WHERE
-		user_id = $1`
-
-	if _, err := us.db.ExecContext(ctx, q, userID); err != nil {
-		return errors.Wrapf(err, "deleting user %s", userID)
+	if err := us.repo.Delete(ctx, userID); err != nil {
+		switch err {
+		case ErrInvalidID:
+			return ErrInvalidID
+		default:
+			return errors.Wrapf(err, "deleting user %s", userID)
+		}
 	}
 
 	return nil
 }
 
-// GetAll retrieves a list of existing users from the DB.
-func (us userService) GetAll(ctx context.Context, traceID string, pageNumber int, rowsPerPage int) ([]User, error) {
-	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.getAll")
-	defer span.End()
-
-	const q = `
-	SELECT
-		*
-	FROM
-		users
-	ORDER BY
-		user_id
-	OFFSET $1 ROWS FETCH NEXT $2 ROWS ONLY`
-
-	offset := (pageNumber - 1) * rowsPerPage
-
-	users := []User{}
-	if err := us.db.SelectContext(ctx, &users, q, offset, rowsPerPage); err != nil {
-		return nil, errors.Wrap(err, "selecting users")
-	}
-
-	return users, nil
-}
-
-// GetByID retrieves a User from the DB by its ID.
+// GetByID retrieves a User by its ID.
 func (us userService) GetByID(ctx context.Context, traceID string, claims auth.Claims, userID string) (User, error) {
-	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.getbyid")
+	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.getById")
 	defer span.End()
-
-	if _, err := uuid.Parse(userID); err != nil {
-		return User{}, ErrInvalidID
-	}
 
 	if !claims.Authorized(auth.RoleAdmin) && claims.Subject != userID {
 		return User{}, ErrForbidden
 	}
 
-	const q = `SELECT * FROM users WHERE user_id = $1`
-
-	var u User
-	if err := us.db.GetContext(ctx, &u, q, userID); err != nil {
-		if err == sql.ErrNoRows {
+	u, err := us.repo.GetByID(ctx, userID)
+	if err != nil {
+		switch err {
+		case ErrInvalidID:
+			return User{}, ErrInvalidID
+		case ErrNotFound:
 			return User{}, ErrNotFound
+		default:
+			return User{}, errors.Wrapf(err, "searching for user %q", userID)
 		}
-		return User{}, errors.Wrapf(err, "selecting user %q", userID)
 	}
 
 	return u, nil
@@ -229,7 +167,7 @@ func (us userService) Authenticate(ctx context.Context, traceID string, now time
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.authenticate")
 	defer span.End()
 
-	u, err := us.getByEmail(ctx, traceID, email)
+	u, err := us.repo.GetByEmail(ctx, email)
 	if err != nil {
 		if err == ErrNotFound {
 			return auth.Claims{}, ErrAuthenticationFailure
@@ -254,22 +192,4 @@ func (us userService) Authenticate(ctx context.Context, traceID string, now time
 	}
 
 	return claims, nil
-}
-
-// getByEmail retrieves a User in the DB by its email.
-func (us userService) getByEmail(ctx context.Context, traceID string, email string) (User, error) {
-	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.service.getByEmail")
-	defer span.End()
-
-	const q = `SELECT * FROM users WHERE email = $1`
-
-	var u User
-	if err := us.db.GetContext(ctx, &u, q, email); err != nil {
-		if err == sql.ErrNoRows {
-			return User{}, ErrNotFound
-		}
-		return User{}, errors.Wrapf(err, "selecting user %q", email)
-	}
-
-	return u, nil
 }

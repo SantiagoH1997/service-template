@@ -66,7 +66,6 @@ func NewHTTPHandler(
 		svc:  us,
 		auth: a,
 	}
-	app.Handle(http.MethodGet, "/v1/users/:page/:rows", uh.getAll, mid.Authenticate(a), mid.Authorize(auth.RoleAdmin))
 	app.Handle(http.MethodGet, "/v1/users/token/:kid", uh.token)
 	app.Handle(http.MethodGet, "/v1/users/:id", uh.getByID, mid.Authenticate(a))
 	app.Handle(http.MethodPost, "/v1/users", uh.create)

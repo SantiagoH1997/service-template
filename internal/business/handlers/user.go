@@ -2,9 +2,7 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/santiagoh1997/service-template/internal/business/auth"
@@ -23,33 +21,6 @@ var (
 type userHandler struct {
 	svc  service.UserService
 	auth *auth.Auth
-}
-
-func (uh userHandler) getAll(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "handlers.userHandler.getAll")
-	defer span.End()
-
-	v, ok := ctx.Value(web.KeyValues).(*web.Values)
-	if !ok {
-		return ErrWebValuesMissing
-	}
-
-	params := web.Params(r)
-	pageNumber, err := strconv.Atoi(params["page"])
-	if err != nil {
-		return web.NewRequestError(fmt.Errorf("invalid page format: %s", params["page"]), http.StatusBadRequest)
-	}
-	rowsPerPage, err := strconv.Atoi(params["rows"])
-	if err != nil {
-		return web.NewRequestError(fmt.Errorf("invalid rows format: %s", params["rows"]), http.StatusBadRequest)
-	}
-
-	users, err := uh.svc.GetAll(ctx, v.TraceID, pageNumber, rowsPerPage)
-	if err != nil {
-		return errors.Wrap(err, "unable to query for users")
-	}
-
-	return web.Respond(ctx, w, users, http.StatusOK)
 }
 
 func (uh userHandler) getByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -131,8 +102,7 @@ func (uh userHandler) update(ctx context.Context, w http.ResponseWriter, r *http
 	}
 
 	params := web.Params(r)
-	u, err := uh.svc.Update(ctx, v.TraceID, claims, params["id"], uur, v.Now)
-	if err != nil {
+	if err := uh.svc.Update(ctx, v.TraceID, claims, params["id"], uur, v.Now); err != nil {
 		switch err {
 		case service.ErrInvalidID:
 			return web.NewRequestError(err, http.StatusBadRequest)
@@ -145,7 +115,7 @@ func (uh userHandler) update(ctx context.Context, w http.ResponseWriter, r *http
 		}
 	}
 
-	return web.Respond(ctx, w, u, http.StatusOK)
+	return web.Respond(ctx, w, nil, http.StatusOK)
 }
 
 func (uh userHandler) delete(ctx context.Context, w http.ResponseWriter, r *http.Request) error {

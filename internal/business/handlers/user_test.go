@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/santiagoh1997/service-template/internal/business/auth"
 	"github.com/santiagoh1997/service-template/internal/business/handlers"
+	"github.com/santiagoh1997/service-template/internal/business/repository"
 	"github.com/santiagoh1997/service-template/internal/business/service"
 	"github.com/santiagoh1997/service-template/internal/business/tests"
 	"github.com/santiagoh1997/service-template/internal/pkg/web"
@@ -30,167 +31,14 @@ type UserTests struct {
 	adminToken string
 }
 
-func TestGetUsers(t *testing.T) {
-	test := tests.NewIntegration(t)
-	t.Cleanup(test.Teardown)
-
-	shutdown := make(chan os.Signal, 1)
-
-	us := service.NewBasicService(test.Log, test.DB)
-	ut := UserTests{
-		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
-		kid:        test.KID,
-		userToken:  test.Token("user@example.com", "password"),
-		adminToken: test.Token("admin@example.com", "password"),
-	}
-
-	t.Run("Invalid page format", func(tt *testing.T) {
-		page := "abc"
-		r := httptest.NewRequest(http.MethodGet, "/v1/users/"+page+"/1", nil)
-		w := httptest.NewRecorder()
-
-		r.Header.Set("Authorization", "Bearer "+ut.adminToken)
-		ut.app.ServeHTTP(w, r)
-
-		if w.Code != http.StatusBadRequest {
-			t.Fatalf("\t%s\tShould receive a status code of 400 for the response. Received: %v", tests.Failed, w.Code)
-		}
-		t.Logf("\t%s\tShould receive a status code of 400 for the response.", tests.Success)
-
-		got := w.Body.String()
-		want := fmt.Sprintf(`{"error":"invalid page format: %s"}`, page)
-		if got != want {
-			t.Logf("\t\tGot : %v", got)
-			t.Logf("\t\tWant: %v", want)
-			t.Fatalf("\t%s\tShould get the expected result.", tests.Failed)
-		}
-		t.Logf("\t%s\tShould get the expected result.", tests.Success)
-	})
-
-	t.Run("Invalid rows format", func(tt *testing.T) {
-		rows := "abc"
-		r := httptest.NewRequest(http.MethodGet, "/v1/users/1/"+rows, nil)
-		w := httptest.NewRecorder()
-
-		r.Header.Set("Authorization", "Bearer "+ut.adminToken)
-		ut.app.ServeHTTP(w, r)
-
-		if w.Code != http.StatusBadRequest {
-			t.Fatalf("\t%s\tShould receive a status code of 400 for the response. Received: %v", tests.Failed, w.Code)
-		}
-		t.Logf("\t%s\tShould receive a status code of 400 for the response.", tests.Success)
-
-		got := w.Body.String()
-		want := fmt.Sprintf(`{"error":"invalid rows format: %s"}`, rows)
-		if got != want {
-			t.Logf("\t\tGot : %v", got)
-			t.Logf("\t\tWant: %v", want)
-			t.Fatalf("\t%s\tShould get the expected result.", tests.Failed)
-		}
-		t.Logf("\t%s\tShould get the expected result.", tests.Success)
-	})
-
-	t.Run("Not authenticated", func(tt *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/v1/users/1/1", nil)
-		w := httptest.NewRecorder()
-
-		ut.app.ServeHTTP(w, r)
-
-		if w.Code != http.StatusUnauthorized {
-			t.Fatalf("\t%s\tShould receive a status code of 401 for the response. Received: %v", tests.Failed, w.Code)
-		}
-		t.Logf("\t%s\tShould receive a status code of 401 for the response.", tests.Success)
-
-		got := w.Body.String()
-		want := `{"error":"expected authorization header format: bearer \u003ctoken\u003e"}`
-		if got != want {
-			t.Logf("\t\tGot : %v", got)
-			t.Logf("\t\tWant: %v", want)
-			t.Fatalf("\t%s\tShould get the expected result.", tests.Failed)
-		}
-		t.Logf("\t%s\tShould get the expected result.", tests.Success)
-	})
-
-	t.Run("Forbidden", func(tt *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/v1/users/1/1", nil)
-		w := httptest.NewRecorder()
-
-		r.Header.Set("Authorization", "Bearer "+ut.userToken)
-		ut.app.ServeHTTP(w, r)
-
-		if w.Code != http.StatusForbidden {
-			t.Fatalf("\t%s\tShould receive a status code of 403 for the response. Received: %v", tests.Failed, w.Code)
-		}
-		t.Logf("\t%s\tShould receive a status code of 403 for the response.", tests.Success)
-
-		got := w.Body.String()
-		want := "you are not authorized for that action"
-		if !strings.Contains(got, want) {
-			if got != want {
-				t.Logf("\t\tGot : %v", got)
-				t.Logf("\t\tWant: %v", want)
-				t.Fatalf("\t%s\tShould get the expected result.", tests.Failed)
-			}
-			t.Logf("\t%s\tShould get the expected result.", tests.Success)
-		}
-	})
-
-	t.Run("No results", func(tt *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/v1/users/1000/1", nil)
-		w := httptest.NewRecorder()
-
-		r.Header.Set("Authorization", "Bearer "+ut.adminToken)
-		ut.app.ServeHTTP(w, r)
-
-		if w.Code != http.StatusOK {
-			t.Fatalf("\t%s\tShould receive a status code of 200 for the response. Received: %v", tests.Failed, w.Code)
-		}
-		t.Logf("\t%s\tShould receive a status code of 200 for the response.", tests.Success)
-
-		var u []service.User
-		if err := json.NewDecoder(w.Body).Decode(&u); err != nil {
-			t.Fatalf("\t%s\tShould be able to unmarshal the response : %v", tests.Failed, err)
-		}
-		t.Logf("\t%s\tShould be able to unmarshal the response.", tests.Success)
-
-		if len(u) != 0 {
-			t.Fatalf("\t%s\tShould return 0 Users. Returned %d Users", tests.Failed, len(u))
-		}
-		t.Logf("\t%s\tShould return 0 Users.", tests.Success)
-	})
-
-	t.Run("Success case", func(tt *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/v1/users/1/1", nil)
-		w := httptest.NewRecorder()
-
-		r.Header.Set("Authorization", "Bearer "+ut.adminToken)
-		ut.app.ServeHTTP(w, r)
-
-		if w.Code != http.StatusOK {
-			t.Fatalf("\t%s\tShould receive a status code of 200 for the response. Received: %v", tests.Failed, w.Code)
-		}
-		t.Logf("\t%s\tShould receive a status code of 200 for the response.", tests.Success)
-
-		var u []service.User
-		if err := json.NewDecoder(w.Body).Decode(&u); err != nil {
-			t.Fatalf("\t%s\tShould be able to unmarshal the response : %v", tests.Failed, err)
-		}
-		t.Logf("\t%s\tShould be able to unmarshal the response.", tests.Success)
-
-		if len(u) == 0 {
-			t.Fatalf("\t%s\tShould return 1 or more Users. Returned %d Users", tests.Failed, len(u))
-		}
-		t.Logf("\t%s\tShould return 1 or more Users.", tests.Success)
-	})
-}
-
 func TestGetUser(t *testing.T) {
 	test := tests.NewIntegration(t)
 	t.Cleanup(test.Teardown)
 
 	shutdown := make(chan os.Signal, 1)
 
-	us := service.NewBasicService(test.Log, test.DB)
+	ur, _ := repository.NewRepository(test.DB)
+	us := service.NewBasicService(ur)
 	ut := UserTests{
 		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
@@ -331,7 +179,8 @@ func TestPostUser(t *testing.T) {
 
 	shutdown := make(chan os.Signal, 1)
 
-	us := service.NewBasicService(test.Log, test.DB)
+	ur, _ := repository.NewRepository(test.DB)
+	us := service.NewBasicService(ur)
 	ut := UserTests{
 		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
@@ -480,7 +329,8 @@ func TestPutUser(t *testing.T) {
 
 	shutdown := make(chan os.Signal, 1)
 
-	us := service.NewBasicService(test.Log, test.DB)
+	ur, _ := repository.NewRepository(test.DB)
+	us := service.NewBasicService(ur)
 	ut := UserTests{
 		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
@@ -492,7 +342,6 @@ func TestPutUser(t *testing.T) {
 		uur := service.UpdateUserRequest{
 			Name:     "Another",
 			LastName: "Name",
-			Email:    "jorge@porcel.com",
 			Country:  "Albania",
 		}
 		body, err := json.Marshal(&uur)
@@ -503,7 +352,7 @@ func TestPutUser(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPut, "/v1/users/123", bytes.NewBuffer(body))
 		w := httptest.NewRecorder()
 
-		r.Header.Set("Authorization", "Bearer "+ut.userToken)
+		r.Header.Set("Authorization", "Bearer "+ut.adminToken)
 		ut.app.ServeHTTP(w, r)
 
 		if w.Code != http.StatusBadRequest {
@@ -535,7 +384,6 @@ func TestPutUser(t *testing.T) {
 		uur := service.UpdateUserRequest{
 			Name:     "Another",
 			LastName: "Name",
-			Email:    "jorge@porcel.com",
 			Country:  "Albania",
 		}
 		body, err := json.Marshal(&uur)
@@ -558,7 +406,6 @@ func TestPutUser(t *testing.T) {
 	t.Run("User not found", func(tt *testing.T) {
 		u := service.UpdateUserRequest{
 			Name:     "Doesn't Exist",
-			Email:    "email@email.com",
 			LastName: "Last Name",
 			Country:  "Argelia",
 		}
@@ -591,7 +438,6 @@ func TestPutUser(t *testing.T) {
 	t.Run("Success case", func(tt *testing.T) {
 		uur := service.UpdateUserRequest{
 			Name:     "Jorge",
-			Email:    "jorge@porcel.com",
 			LastName: "Porcel",
 			Country:  "Albania",
 		}
@@ -627,25 +473,20 @@ func TestPutUser(t *testing.T) {
 			t.Fatalf("\t%s\tShould be able to unmarshal the response : %v", tests.Failed, err)
 		}
 
-		if u.Name != "Jorge" {
-			t.Fatalf("\t%s\tShould see an updated Name : got %q want %q", tests.Failed, u.Name, "Jorge")
+		if u.Name != uur.Name {
+			t.Fatalf("\t%s\tShould see an updated Name : got %q want %q", tests.Failed, u.Name, uur.Name)
 		}
 		t.Logf("\t%s\tShould see an updated Name.", tests.Success)
 
-		if u.LastName != "Porcel" {
-			t.Fatalf("\t%s\tShould see an updated LastName : got %q want %q", tests.Failed, u.LastName, "Porcel")
+		if u.LastName != uur.LastName {
+			t.Fatalf("\t%s\tShould see an updated LastName : got %q want %q", tests.Failed, u.LastName, uur.LastName)
 		}
 		t.Logf("\t%s\tShould see an updated LastName.", tests.Success)
 
-		if u.Country != "Albania" {
-			t.Fatalf("\t%s\tShould see an updated Country : got %q want %q", tests.Failed, u.Country, "Porcel")
+		if u.Country != uur.Country {
+			t.Fatalf("\t%s\tShould see an updated Country : got %q want %q", tests.Failed, u.Country, uur.Country)
 		}
 		t.Logf("\t%s\tShould see an updated Country.", tests.Success)
-
-		if u.Email != "jorge@porcel.com" {
-			t.Fatalf("\t%s\tShould see an updated Email : got %q want %q", tests.Failed, u.Email, "jorge@porcel.com")
-		}
-		t.Logf("\t%s\tShould see an updated Email.", tests.Success)
 	})
 }
 
@@ -655,7 +496,8 @@ func TestDeleteUser(t *testing.T) {
 
 	shutdown := make(chan os.Signal, 1)
 
-	us := service.NewBasicService(test.Log, test.DB)
+	ur, _ := repository.NewRepository(test.DB)
+	us := service.NewBasicService(ur)
 	ut := UserTests{
 		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
@@ -779,7 +621,8 @@ func TestGetToken(t *testing.T) {
 
 	shutdown := make(chan os.Signal, 1)
 
-	us := service.NewBasicService(test.Log, test.DB)
+	ur, _ := repository.NewRepository(test.DB)
+	us := service.NewBasicService(ur)
 	ut := UserTests{
 		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,

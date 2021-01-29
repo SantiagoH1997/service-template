@@ -21,6 +21,7 @@ import (
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"github.com/santiagoh1997/service-template/internal/business/auth"
 	"github.com/santiagoh1997/service-template/internal/business/handlers"
+	"github.com/santiagoh1997/service-template/internal/business/repository"
 	"github.com/santiagoh1997/service-template/internal/business/service"
 	"github.com/santiagoh1997/service-template/internal/pkg/database"
 	"go.opentelemetry.io/otel"
@@ -247,7 +248,11 @@ func run(log *log.Logger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	us := service.New(log, requestCount, requestLatency, db)
+	ur, err := repository.NewRepository(db)
+	if err != nil {
+		return errors.Wrap(err, "creating repository")
+	}
+	us := service.New(ur, requestCount, requestLatency)
 	handler := handlers.NewHTTPHandler(build, shutdown, us, log, errorCount, redMetrics, auth, db)
 
 	api := http.Server{
