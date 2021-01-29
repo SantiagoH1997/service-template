@@ -8,11 +8,11 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
-	"github.com/santiagoh1997/service-template/internal/business/auth"
-	"github.com/santiagoh1997/service-template/internal/business/data/schema"
-	"github.com/santiagoh1997/service-template/internal/business/repository"
-	"github.com/santiagoh1997/service-template/internal/business/service"
-	"github.com/santiagoh1997/service-template/internal/business/tests"
+	"github.com/santiagoh1997/service-template/internal/auth"
+	"github.com/santiagoh1997/service-template/internal/data/schema"
+	"github.com/santiagoh1997/service-template/internal/repository"
+	"github.com/santiagoh1997/service-template/internal/service"
+	"github.com/santiagoh1997/service-template/internal/tests"
 )
 
 func TestCreate(t *testing.T) {

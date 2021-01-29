@@ -11,10 +11,10 @@ import (
 	"github.com/go-kit/kit/metrics"
 	"github.com/jmoiron/sqlx"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/santiagoh1997/service-template/internal/business/auth"
-	"github.com/santiagoh1997/service-template/internal/business/mid"
-	"github.com/santiagoh1997/service-template/internal/business/service"
+	"github.com/santiagoh1997/service-template/internal/auth"
+	"github.com/santiagoh1997/service-template/internal/mid"
 	"github.com/santiagoh1997/service-template/internal/pkg/web"
+	"github.com/santiagoh1997/service-template/internal/service"
 )
 
 // NewHTTPHandler constructs an http.Handler with all the application routes defined.

@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	"github.com/santiagoh1997/service-template/internal/business/service"
+	"github.com/santiagoh1997/service-template/internal/service"
 )
 
 // UserRepository is in charge of communicating with the persistence layer.

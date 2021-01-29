@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/santiagoh1997/service-template/internal/business/data/schema"
+	"github.com/santiagoh1997/service-template/internal/data/schema"
 	"github.com/santiagoh1997/service-template/internal/pkg/database"
 )
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/pkg/errors"
-	"github.com/santiagoh1997/service-template/internal/business/auth"
+	"github.com/santiagoh1997/service-template/internal/auth"
 )
 
 type instrumentingDecorator struct {

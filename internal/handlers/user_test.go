@@ -13,12 +13,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/santiagoh1997/service-template/internal/business/auth"
-	"github.com/santiagoh1997/service-template/internal/business/handlers"
-	"github.com/santiagoh1997/service-template/internal/business/repository"
-	"github.com/santiagoh1997/service-template/internal/business/service"
-	"github.com/santiagoh1997/service-template/internal/business/tests"
+	"github.com/santiagoh1997/service-template/internal/auth"
+	"github.com/santiagoh1997/service-template/internal/handlers"
 	"github.com/santiagoh1997/service-template/internal/pkg/web"
+	"github.com/santiagoh1997/service-template/internal/repository"
+	"github.com/santiagoh1997/service-template/internal/service"
+	"github.com/santiagoh1997/service-template/internal/tests"
 )
 
 // UserTests holds methods for each user subtest. This type allows passing

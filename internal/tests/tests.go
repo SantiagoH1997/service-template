@@ -13,11 +13,11 @@ import (
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/jmoiron/sqlx"
-	"github.com/santiagoh1997/service-template/internal/business/auth"
-	"github.com/santiagoh1997/service-template/internal/business/data/schema"
-	"github.com/santiagoh1997/service-template/internal/business/repository"
-	"github.com/santiagoh1997/service-template/internal/business/service"
+	"github.com/santiagoh1997/service-template/internal/auth"
+	"github.com/santiagoh1997/service-template/internal/data/schema"
 	"github.com/santiagoh1997/service-template/internal/pkg/database"
+	"github.com/santiagoh1997/service-template/internal/repository"
+	"github.com/santiagoh1997/service-template/internal/service"
 )
 
 // Success and failure markers.

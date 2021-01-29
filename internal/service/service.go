@@ -9,7 +9,7 @@ import (
 	"github.com/go-kit/kit/metrics"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"github.com/santiagoh1997/service-template/internal/business/auth"
+	"github.com/santiagoh1997/service-template/internal/auth"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/crypto/bcrypt"
 )

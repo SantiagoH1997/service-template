@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
-	"github.com/santiagoh1997/service-template/internal/business/auth"
-	"github.com/santiagoh1997/service-template/internal/business/service"
+	"github.com/santiagoh1997/service-template/internal/auth"
 	"github.com/santiagoh1997/service-template/internal/pkg/web"
+	"github.com/santiagoh1997/service-template/internal/service"
 	"go.opentelemetry.io/otel/trace"
 )
 

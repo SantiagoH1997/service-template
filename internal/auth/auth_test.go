@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/santiagoh1997/service-template/internal/business/auth"
+	"github.com/santiagoh1997/service-template/internal/auth"
 )
 
 // Success and failure markers.

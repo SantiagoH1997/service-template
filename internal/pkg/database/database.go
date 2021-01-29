@@ -9,7 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // The database driver in use.
 	"github.com/pkg/errors"
-	"github.com/santiagoh1997/service-template/internal/business/data/schema"
+	"github.com/santiagoh1997/service-template/internal/data/schema"
 	"go.opentelemetry.io/otel/trace"
 )
 
