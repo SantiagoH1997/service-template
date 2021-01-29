@@ -47,18 +47,29 @@ type userService struct {
 }
 
 // NewBasicService constructs a UserService for api access.
-func NewBasicService(repo Repository) UserService {
+func NewBasicService(repo Repository) (UserService, error) {
+	if repo == nil {
+		return nil, errors.New("repo can't be nil")
+	}
+
 	return userService{
 		repo: repo,
-	}
+	}, nil
 }
 
 // New returns a UserService with instrumentation features.
-func New(repo Repository, requestCount metrics.Counter, requestLatency metrics.Histogram) UserService {
-	us := NewBasicService(repo)
-	us = NewInstrumentingDecorator(requestCount, requestLatency, us)
+func New(repo Repository, requestCount metrics.Counter, requestLatency metrics.Histogram) (UserService, error) {
+	us, err := NewBasicService(repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating service")
+	}
 
-	return us
+	us, err = NewInstrumentingDecorator(requestCount, requestLatency, us)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating service")
+	}
+
+	return us, nil
 }
 
 // Create creates a new user, generating a password hash.

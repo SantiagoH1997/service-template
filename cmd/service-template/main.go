@@ -252,7 +252,11 @@ func run(log *log.Logger) error {
 	if err != nil {
 		return errors.Wrap(err, "creating repository")
 	}
-	us := service.New(ur, requestCount, requestLatency)
+	us, err := service.New(ur, requestCount, requestLatency)
+	if err != nil {
+		return errors.Wrap(err, "creating service")
+	}
+
 	handler := handlers.NewHTTPHandler(build, shutdown, us, log, errorCount, redMetrics, auth, db)
 
 	api := http.Server{

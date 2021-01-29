@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/metrics"
+	"github.com/pkg/errors"
 	"github.com/santiagoh1997/service-template/internal/business/auth"
 )
 
@@ -16,12 +17,22 @@ type instrumentingDecorator struct {
 }
 
 // NewInstrumentingDecorator returns a UserService with instrumentation features.
-func NewInstrumentingDecorator(requestCount metrics.Counter, requestLatency metrics.Histogram, us UserService) UserService {
+func NewInstrumentingDecorator(requestCount metrics.Counter, requestLatency metrics.Histogram, us UserService) (UserService, error) {
+	if requestCount == nil {
+		return nil, errors.New("requestCount can't be nil")
+	}
+	if requestLatency == nil {
+		return nil, errors.New("requestLatency can't be nil")
+	}
+	if us == nil {
+		return nil, errors.New("UserService can't be nil")
+	}
+
 	return &instrumentingDecorator{
 		requestCount:   requestCount,
 		requestLatency: requestLatency,
 		Service:        us,
-	}
+	}, nil
 }
 
 func (d *instrumentingDecorator) Create(ctx context.Context, traceID string, nur NewUserRequest, now time.Time) (user User, err error) {

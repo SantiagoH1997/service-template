@@ -20,7 +20,7 @@ func TestCreate(t *testing.T) {
 	t.Cleanup(teardown)
 
 	ur, _ := repository.NewRepository(db)
-	us := service.NewBasicService(ur)
+	us, _ := service.NewBasicService(ur)
 	ctx := context.Background()
 	now := time.Date(2018, time.October, 1, 0, 0, 0, 0, time.UTC)
 	traceID := "00000000-0000-0000-0000-000000000000"
@@ -87,7 +87,7 @@ func TestUpdate(t *testing.T) {
 	t.Cleanup(teardown)
 
 	ur, _ := repository.NewRepository(db)
-	us := service.NewBasicService(ur)
+	us, _ := service.NewBasicService(ur)
 	ctx := context.Background()
 	now := time.Date(2018, time.October, 1, 0, 0, 0, 0, time.UTC)
 	traceID := "00000000-0000-0000-0000-000000000000"
@@ -159,7 +159,7 @@ func TestDelete(t *testing.T) {
 	t.Cleanup(teardown)
 
 	ur, _ := repository.NewRepository(db)
-	us := service.NewBasicService(ur)
+	us, _ := service.NewBasicService(ur)
 	ctx := context.Background()
 	now := time.Date(2018, time.October, 1, 0, 0, 0, 0, time.UTC)
 	traceID := "00000000-0000-0000-0000-000000000000"
@@ -314,7 +314,7 @@ func TestGetByID(t *testing.T) {
 	}
 
 	ur, _ := repository.NewRepository(db)
-	us := service.NewBasicService(ur)
+	us, _ := service.NewBasicService(ur)
 	now := time.Date(2018, time.October, 1, 0, 0, 0, 0, time.UTC)
 	ctx := context.Background()
 	traceID := "00000000-0000-0000-0000-000000000000"
@@ -445,7 +445,7 @@ func TestAuthenticate(t *testing.T) {
 	now := time.Date(2018, time.October, 1, 0, 0, 0, 0, time.UTC)
 	traceID := "00000000-0000-0000-0000-000000000000"
 	ur, _ := repository.NewRepository(db)
-	us := service.NewBasicService(ur)
+	us, _ := service.NewBasicService(ur)
 
 	t.Run("Success case", func(tt *testing.T) {
 		nur := service.NewUserRequest{

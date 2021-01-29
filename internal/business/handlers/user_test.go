@@ -38,7 +38,7 @@ func TestGetUser(t *testing.T) {
 	shutdown := make(chan os.Signal, 1)
 
 	ur, _ := repository.NewRepository(test.DB)
-	us := service.NewBasicService(ur)
+	us, _ := service.NewBasicService(ur)
 	ut := UserTests{
 		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
@@ -180,7 +180,7 @@ func TestPostUser(t *testing.T) {
 	shutdown := make(chan os.Signal, 1)
 
 	ur, _ := repository.NewRepository(test.DB)
-	us := service.NewBasicService(ur)
+	us, _ := service.NewBasicService(ur)
 	ut := UserTests{
 		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
@@ -330,7 +330,7 @@ func TestPutUser(t *testing.T) {
 	shutdown := make(chan os.Signal, 1)
 
 	ur, _ := repository.NewRepository(test.DB)
-	us := service.NewBasicService(ur)
+	us, _ := service.NewBasicService(ur)
 	ut := UserTests{
 		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
@@ -497,7 +497,7 @@ func TestDeleteUser(t *testing.T) {
 	shutdown := make(chan os.Signal, 1)
 
 	ur, _ := repository.NewRepository(test.DB)
-	us := service.NewBasicService(ur)
+	us, _ := service.NewBasicService(ur)
 	ut := UserTests{
 		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
@@ -622,7 +622,7 @@ func TestGetToken(t *testing.T) {
 	shutdown := make(chan os.Signal, 1)
 
 	ur, _ := repository.NewRepository(test.DB)
-	us := service.NewBasicService(ur)
+	us, _ := service.NewBasicService(ur)
 	ut := UserTests{
 		app:        handlers.NewHTTPHandler("test", shutdown, us, test.Log, nil, nil, test.Auth, test.DB),
 		kid:        test.KID,
